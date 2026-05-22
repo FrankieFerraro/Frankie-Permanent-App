@@ -1,209 +1,34 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#080b14" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Frankie 2.0" />
-  <title>Frankie 2.0 Life OS</title>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Frankie 2.0</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="styles.css">
+  <script>const CONFIG={"slug": "frankie", "title": "Frankie 2.0", "shortName": "Frankie 2.0", "subtitle": "Execution, wealth, health, family, purpose and long-term freedom.", "bodyClass": "", "theme": "#e8c76d", "letter": "F", "waterGoal": null, "messages": [{"line": "Build the day so tomorrow can trust you.", "context": "Every small action is either building trust with your future self or breaking it. Today does not need to be perfect. It needs to be honest.", "reflection": "What is one promise I need to keep today?"}, {"line": "Be gentle with people and ruthless with drift.", "context": "Kindness and high standards can live in the same person. Be soft with humans and firm with the habits that pull you away from your future.", "reflection": "Where am I drifting without noticing?"}, {"line": "I am my message.", "context": "Do not just speak your values. Become them. The strongest message you will ever send is the way you live.", "reflection": "What would my actions today teach someone about me?"}, {"line": "Remember the goal. Focus on the process.", "context": "The result gives direction, but the process creates the person. Win the next action and let the bigger outcome compound.", "reflection": "What process do I need to honour today?"}, {"line": "Confidence is rented; the payment is action.", "context": "You do not become confident by thinking harder. You become confident by stacking evidence that you do what you say.", "reflection": "What action can become proof today?"}, {"line": "This too shall pass.", "context": "Good moments and hard moments both move. Stay humble in the high and steady in the low.", "reflection": "What feeling do I need to stop treating as permanent?"}, {"line": "Do what they\u2019ve done and you will have what they have.", "context": "Outcomes leave clues. Find the people who already built what you want and study their actions, not just their words.", "reflection": "Who am I modelling today?"}, {"line": "Be patient with results and wildly impatient with action.", "context": "Results lag. Action is immediate. Stop demanding instant proof and start demanding immediate movement.", "reflection": "Where can I act before I feel ready?"}], "defaultHabits": ["Train or move", "Eat clean", "Money action", "Real estate action", "Family / Jade action", "Purpose / help someone"], "defaultProjects": [{"id": "p1", "title": "Pakenham House", "sections": [{"id": "s1", "title": "Outside", "tasks": [{"id": "t1", "text": "Fix light", "done": false}, {"id": "t2", "text": "Check roof", "done": false}]}, {"id": "s2", "title": "Inside", "tasks": [{"id": "t3", "text": "Fix tap", "done": false}]}]}], "mentor": {"overwhelmed": "Overwhelmed means there are too many open loops.\n\n1. Write the top 3.\n2. Pick the one that reduces the most pressure.\n3. Do 20 minutes.\n4. Stop negotiating with the mood.", "procrastinating": "Procrastination is usually unclear action or emotional avoidance.\n\nMake it smaller. Set 10 minutes. Start ugly. Reward the start.", "direction": "Direction comes from repeated signal.\n\nBody first. Money second. Career third. Relationship and purpose before bed. Move and refine.", "mood": "Do not let a temporary state write a permanent story. Move your body, clean your space, drink water and lower the pressure. Then choose the next right action.", "money": "Money mode - no hype. Protect cashflow, buy assets consistently and do not let escape energy make investment decisions.", "default": "Choose one useful action and complete it now."}};</script><script defer src="app.js"></script>
 </head>
-<body>
-  <div class="bg-orb orb-a"></div>
-  <div class="bg-orb orb-b"></div>
+<body class="">
+<div class="intro" id="intro"><div class="phoenix"><div class="wing left"></div><div class="wing right"></div><div class="core"></div><div class="introText" id="introStreak">Day alive</div></div></div>
+<main class="app">
+  <section class="hero"><div class="kicker">V5 visual prototype</div><h1 id="title">Frankie 2.0</h1><p class="sub" id="sub">Execution, wealth, health, family, purpose and long-term freedom.</p><div class="message"><strong id="messageLine">Message loading...</strong><div class="note" id="messageContext"></div><div class="reflection" id="messageReflection"></div><div class="actions" style="margin-top:12px"><button class="small secondary" id="newMessage">New message</button></div></div></section>
 
-  <main class="app-shell">
-    <header class="hero card">
-      <div>
-        <p class="kicker">Permanent PWA · GitHub Pages ready</p>
-        <h1>Frankie 2.0<br><span>Life OS</span></h1>
-        <p class="hero-copy">A reusable personal command centre for FIRE, property, health, family, career and purpose. Saved on your phone. Built to be upgraded.</p>
-      </div>
-      <div class="hero-score">
-        <div class="ring" id="scoreRing"><div><strong id="lifeScore">0</strong><span>Life Score</span></div></div>
-        <p id="engineStatus" class="status loading">Engine loading…</p>
-      </div>
-    </header>
+  <section id="home" class="screen active">
+    <div class="topgrid">
+      <div class="card"><div class="row"><h2>Daily score</h2><span class="tag">Today</span></div><div class="scoreRing"><div class="scoreInside"><div><div class="big" id="scoreNum">0%</div><div class="smallcap">score</div></div></div></div><div class="actions"><button id="closeDay">Close day</button><button class="secondary" id="resetToday">Reset today</button></div></div>
+      <div class="card flameWrap"><div class="flameBadge"><span id="streakNum">0</span></div><div class="smallcap" id="streakName">Orange flame</div><div class="actions" style="margin-top:12px;justify-content:center"><button id="markComplete">Mark complete</button><button class="secondary" id="replayIntro">Replay</button></div></div>
+    </div>
+    <div class="card" id="waterCard"><div class="row"><h2>Water</h2><span class="tag" id="waterPct">0%</span></div><div class="note" id="waterNow"></div><div class="waterDrops" id="drops"></div></div>
+    <div class="card"><div class="row"><h2>Daily checklist</h2><span class="tag">Editable</span></div><div id="habits"></div><div class="row"><input id="newHabit" placeholder="Add a checklist item"><button id="addHabitBtn">Add</button></div></div>
+  </section>
 
-    <nav class="tabs card" aria-label="App sections">
-      <button data-tab="dashboard" class="active">Dashboard</button>
-      <button data-tab="money">Money</button>
-      <button data-tab="property">Property</button>
-      <button data-tab="daily">Daily</button>
-      <button data-tab="mentor">Mentor</button>
-      <button data-tab="setup">Setup</button>
-    </nav>
+  <section id="achievements" class="screen"><div class="card"><div class="row"><h2>Achievement List</h2><button id="addProject">+ Main heading</button></div><p class="note">Headings, optional subheadings, unlimited tasks and flame completion animation.</p><div id="projects"></div></div></section>
 
-    <section id="dashboard" class="tab-panel active">
-      <div class="grid">
-        <article class="card span-12 pad">
-          <div class="section-head"><h2>Mission Control</h2><span class="badge">Saved locally</span></div>
-          <div class="metrics four">
-            <div class="metric"><span>Projected FIRE assets</span><strong id="dashFinal">$0</strong><small>from Money model</small></div>
-            <div class="metric"><span>Usable equity</span><strong id="dashEquity">$0</strong><small>80% value minus loan</small></div>
-            <div class="metric"><span>Jade freedom target</span><strong id="dashJade">0%</strong><small>4-year progress</small></div>
-            <div class="metric"><span>Today complete</span><strong id="dashToday">0%</strong><small>non-negotiables</small></div>
-          </div>
-        </article>
+  <section id="notes" class="screen"><div class="card"><div class="row"><h2>Daily Notes</h2><select id="layout"><option value="cols1">1 note</option><option value="cols2">2 notes</option><option value="cols4">4 notes</option><option value="compact">compact</option></select></div><p class="note">Today stays at the top. You can edit old days any time.</p><div class="noteCard"><div class="dateTitle" id="todayDate"></div><textarea id="todayNote" placeholder="Write today’s note..."></textarea><div class="actions" style="margin-top:8px"><button id="saveTodayNote">Save today</button></div></div><div class="row"><input type="date" id="noteDate"><button id="goDate">Go to date</button></div><div class="actions" style="margin-top:10px"><button class="secondary" id="copyNotes">Copy all</button><button class="secondary" id="exportNotes">Export notes</button><button class="secondary" id="printNotes">Print</button></div></div><div id="notesGrid" class="notesGrid cols1"></div></section>
 
-        <article class="card span-7 pad">
-          <div class="section-head"><h2>20-year asset curve</h2><span class="badge">Live</span></div>
-          <canvas id="assetChart" width="900" height="430"></canvas>
-        </article>
+  <section id="mentor" class="screen"><div class="card"><div class="row"><h2>Mentor Mode</h2><button class="small secondary" id="editMentor">Edit responses</button></div><button class="mentorBtn" data-mentor="overwhelmed">I’m overwhelmed</button><button class="mentorBtn" data-mentor="procrastinating">I’m procrastinating</button><button class="mentorBtn" data-mentor="direction">I need guidance</button><button class="mentorBtn" data-mentor="mood">I feel sad, angry or moody</button><button class="mentorBtn" data-mentor="money">Money / wealth mode</button><div class="mentorOut" id="mentorOut">Choose a prompt.</div></div></section>
 
-        <article class="card span-5 pad">
-          <div class="section-head"><h2>5 Pillars</h2><span class="badge">Frankie OS</span></div>
-          <div class="pillars">
-            <div><b>Health</b><span>Train, eat clean, sleep, mobility</span></div>
-            <div><b>Wealth</b><span>Property, ETFs, Bitcoin, cashflow</span></div>
-            <div><b>Family</b><span>Jade, future kids, presence, safety</span></div>
-            <div><b>Career</b><span>Support work → real estate income</span></div>
-            <div><b>Purpose</b><span>Impact, mentoring, community, giving back</span></div>
-          </div>
-        </article>
+  <section id="stats" class="screen"><div class="triple"><div class="card"><h2>Week</h2><div class="big" id="weekAvg">0%</div></div><div class="card"><h2>Month</h2><div class="big" id="monthAvg">0%</div></div><div class="card"><h2>Year</h2><div class="big" id="yearAvg">0%</div></div></div><div class="card"><h2>Flame progression</h2><div class="progressBars"><div>30 days<div class="bar"><span id="bar30"></span></div></div><div>60 days<div class="bar"><span id="bar60"></span></div></div><div>365 days<div class="bar"><span id="bar365"></span></div></div></div></div><div class="card"><h2>Daily history</h2><div class="history" id="history"></div></div><div class="card"><h2>Notifications preview</h2><pre class="note mono" id="notifPreview"></pre><div class="actions"><button id="askNotify">Allow notifications</button><button class="secondary" id="testNotify">Test notification</button></div><p class="note">True 1am automatic notifications come in the cloud/push stage.</p></div></section>
 
-        <article class="card span-12 pad roadmap-wrap">
-          <div class="section-head"><h2>4-Phase Roadmap</h2><span class="badge">Long game</span></div>
-          <div class="roadmap">
-            <div><strong>1 · Build</strong><p>Discipline, skills, savings, real estate reps, daily health base.</p></div>
-            <div><strong>2 · Freedom</strong><p>Scale income, buy assets, reduce risky emotion-based decisions.</p></div>
-            <div><strong>3 · Family</strong><p>Give Jade options, build stability, create time-rich family life.</p></div>
-            <div><strong>4 · Impact</strong><p>Mentor, give back, build systems that help people at scale.</p></div>
-          </div>
-        </article>
-      </div>
-    </section>
+  <section id="settings" class="screen"><div class="card"><h2>Backup + handover</h2><p class="note">Everything is editable. Back up before upgrades.</p><div class="actions"><button id="backup">Export backup</button><button class="secondary" id="restore">Import backup</button></div></div><div class="card dangerZone"><h2>Danger Zone</h2><p class="note">Reset is hidden behind confirmation and passcode 2413.</p><button class="danger" id="unlockReset">Unlock reset flow</button><div id="resetPanel" class="hidden" style="margin-top:12px"><button class="danger" id="finalReset">Final reset streak to zero</button></div></div></section>
 
-    <section id="money" class="tab-panel">
-      <div class="grid">
-        <article class="card span-5 pad">
-          <div class="section-head"><h2>FIRE Calculator</h2><span class="badge">Auto updates</span></div>
-          <div class="form-stack">
-            <label>Starting investments <input id="startingInvestments" data-save type="number" inputmode="decimal" value="60000"></label>
-            <label>Weekly investment <input id="weeklyInvestment" data-save type="number" inputmode="decimal" value="521"></label>
-            <label>Expected annual return % <input id="annualReturn" data-save type="number" inputmode="decimal" value="8"></label>
-            <label>Projection years <input id="projectionYears" data-save type="number" inputmode="numeric" value="20"></label>
-            <label>Target annual passive income <input id="targetIncome" data-save type="number" inputmode="decimal" value="65000"></label>
-          </div>
-        </article>
-
-        <article class="card span-7 pad">
-          <div class="section-head"><h2>Projection Result</h2><span class="badge">Compound model</span></div>
-          <div class="metrics two">
-            <div class="metric"><span>Final value</span><strong id="finalPortfolio">$0</strong><small>total portfolio</small></div>
-            <div class="metric"><span>Total contributed</span><strong id="totalContributed">$0</strong><small>your deposits</small></div>
-            <div class="metric"><span>Growth</span><strong id="portfolioGrowth">$0</strong><small>compound return</small></div>
-            <div class="metric"><span>Monthly income @ 4%</span><strong id="monthlyPassive">$0</strong><small>rough rule only</small></div>
-          </div>
-          <div class="progress-block">
-            <div class="progress-label"><span>Progress to FIRE target</span><b id="fireProgressText">0%</b></div>
-            <div class="bar"><div id="fireProgressBar"></div></div>
-            <p class="tiny">Target portfolio is calculated as annual passive income ÷ 4%.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section id="property" class="tab-panel">
-      <div class="grid">
-        <article class="card span-5 pad">
-          <div class="section-head"><h2>Property Inputs</h2><span class="badge">Pakenham ready</span></div>
-          <div class="form-stack">
-            <label>Market value <input id="propertyValue" data-save type="number" inputmode="decimal" value="650000"></label>
-            <label>Loan balance <input id="loanBalance" data-save type="number" inputmode="decimal" value="600000"></label>
-            <label>Weekly rent <input id="weeklyRent" data-save type="number" inputmode="decimal" value="500"></label>
-            <label>Interest rate % <input id="interestRate" data-save type="number" inputmode="decimal" value="6.2"></label>
-            <label>Annual property costs <input id="annualCosts" data-save type="number" inputmode="decimal" value="6500"></label>
-          </div>
-        </article>
-        <article class="card span-7 pad">
-          <div class="section-head"><h2>Property Engine</h2><span class="badge">No hype</span></div>
-          <div class="metrics two">
-            <div class="metric"><span>Usable equity</span><strong id="usableEquity">$0</strong><small>80% value minus loan</small></div>
-            <div class="metric"><span>Gross rent yearly</span><strong id="grossRent">$0</strong><small>weekly rent × 52</small></div>
-            <div class="metric"><span>Interest estimate</span><strong id="annualInterest">$0</strong><small>loan × rate</small></div>
-            <div class="metric"><span>Cashflow estimate</span><strong id="propertyCashflow">$0</strong><small>rent - interest - costs</small></div>
-          </div>
-          <div class="warning"><b>Formula used</b> - Usable Equity = 80% × Market Value - Current Loan Balance.</div>
-        </article>
-      </div>
-    </section>
-
-    <section id="daily" class="tab-panel">
-      <div class="grid">
-        <article class="card span-6 pad">
-          <div class="section-head"><h2>Daily Mission</h2><span class="badge" id="todayDate">Today</span></div>
-          <div class="checks" id="dailyChecks">
-            <label><input type="checkbox" data-daily="train"> Train or move</label>
-            <label><input type="checkbox" data-daily="food"> Eat clean</label>
-            <label><input type="checkbox" data-daily="money"> Money / asset action</label>
-            <label><input type="checkbox" data-daily="career"> Real estate / career action</label>
-            <label><input type="checkbox" data-daily="family"> Jade / family presence</label>
-            <label><input type="checkbox" data-daily="purpose"> Help someone / purpose action</label>
-          </div>
-          <button class="primary" id="resetDaily">Reset today</button>
-        </article>
-
-        <article class="card span-6 pad">
-          <div class="section-head"><h2>Weekly Heatmap</h2><span class="badge">Stored on device</span></div>
-          <div id="heatmap" class="heatmap"></div>
-          <p class="tiny">The heatmap fills based on today’s completed actions. This version stores your data in your browser local storage.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="mentor" class="tab-panel">
-      <div class="grid">
-        <article class="card span-5 pad">
-          <div class="section-head"><h2>AI Mentor Mode</h2><span class="badge">Preset engine</span></div>
-          <div class="mentor-buttons">
-            <button data-mentor="behind">I feel behind</button>
-            <button data-mentor="discipline">I need discipline</button>
-            <button data-mentor="money">Money decision</button>
-            <button data-mentor="career">Real estate mode</button>
-            <button data-mentor="family">Family pressure</button>
-            <button data-mentor="today">Plan my day</button>
-          </div>
-          <label class="free-ask">Custom question <textarea id="mentorInput" rows="4" placeholder="Type anything here..."></textarea></label>
-          <button class="primary" id="customMentor">Generate response</button>
-        </article>
-        <article class="card span-7 pad">
-          <div class="section-head"><h2>Response</h2><span class="badge">Direct</span></div>
-          <div class="mentor-output" id="mentorOutput">Pick a mode or type a custom question.</div>
-        </article>
-      </div>
-    </section>
-
-    <section id="setup" class="tab-panel">
-      <div class="grid">
-        <article class="card span-6 pad">
-          <div class="section-head"><h2>Permanent App Setup</h2><span class="badge">No timer</span></div>
-          <ol class="steps">
-            <li>Create a free GitHub account.</li>
-            <li>Create a new repository called <b>frankie-2-life-os</b>.</li>
-            <li>Upload all files from this folder.</li>
-            <li>Go to Settings → Pages.</li>
-            <li>Select Branch → main → root.</li>
-            <li>Open the GitHub Pages link in Safari.</li>
-            <li>Tap Share → Add to Home Screen.</li>
-          </ol>
-          <p class="tiny">Once hosted, this works like a permanent iPhone app. No Netlify Drop timer.</p>
-        </article>
-        <article class="card span-6 pad">
-          <div class="section-head"><h2>Backup / Restore</h2><span class="badge">Keep your data</span></div>
-          <button class="primary" id="exportData">Export backup</button>
-          <label class="import-label">Import backup <input id="importData" type="file" accept="application/json"></label>
-          <button class="danger" id="clearData">Clear saved app data</button>
-          <pre id="backupStatus" class="backup-status">Ready.</pre>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <script src="app.js"></script>
-</body>
-</html>
+  <nav class="tabs"><button class="tab active" data-tab="home">Home</button><button class="tab" data-tab="achievements">Wins</button><button class="tab" data-tab="notes">Notes</button><button class="tab" data-tab="mentor">Mentor</button><button class="tab" data-tab="stats">Stats</button><button class="tab" data-tab="settings">Settings</button></nav>
+</main></body></html>
