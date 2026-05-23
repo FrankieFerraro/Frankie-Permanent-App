@@ -1,15 +1,21 @@
-# Frankie 2.0 V5 Visual Prototype
+# Frankie 2.0 V7 Usability Polish
 
-Upload the files inside this folder to the GitHub Pages repo. Do not upload the zip itself.
+Upload these files to the GitHub Pages repo, replacing the existing files.
 
 Includes:
-- Daily checklist for both apps
-- Message of the Day with context/reflection
-- Fire streak dashboard with 4-second phoenix animation
-- Achievement List
-- Daily Notes
-- Mentor Mode
-- Hidden passcode reset flow - 2413
-- Backup/export
+- Simple black F app icon
+- Inline Achievement List task creation
+- Subheading-level + task button
+- Reversible task completion
+- Achievement counters
+- Cleaner Daily Notes layout
+- Date format changed to day/month/year style
+- Go-to-date controls moved higher
+- Year calendar view
+- 25 seeded test notes for layout testing
+- Copy button per note
+- Export all notes as Markdown
+- Backup/export as JSON
+- Hidden passcode reset flow remains protected
 
-Everything is editable/changeable.
+Open your live app with ?v=7 after upload.
