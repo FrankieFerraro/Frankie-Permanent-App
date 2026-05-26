@@ -145,3 +145,164 @@ button{cursor:pointer;border:0;background:none;color:inherit}
 @media(max-width:390px){
   .drag-grip{margin-right:6px}
 }
+
+/* V1.6 inline editing */
+.editable{
+  display:inline-block;
+  min-width:32px;
+  max-width:100%;
+  outline:none;
+  border-radius:8px;
+  padding:2px 4px;
+  cursor:text;
+}
+.editable:focus{
+  background:rgba(212,185,77,.08);
+  box-shadow:0 0 0 1px rgba(212,185,77,.34);
+}
+.editable:empty:before{
+  content:attr(data-placeholder);
+  color:var(--muted2);
+}
+.editable-title{
+  color:var(--gold);
+}
+.editable-sub{
+  color:var(--text);
+}
+.editable-task{
+  width:100%;
+}
+.task-row{
+  grid-template-columns:40px 24px 1fr 42px 42px;
+}
+.task-grip{
+  align-self:center;
+  margin-right:0;
+}
+.row-text.editable{
+  word-break:break-word;
+}
+.done .editable-task{
+  text-decoration:line-through;
+  color:var(--muted2);
+}
+
+/* V1.7 Wins compact buttons and safer layout */
+.win-group-count{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:14px;
+}
+.win-card .delWin{
+  padding:9px 12px;
+  font-size:14px;
+  border-radius:12px;
+}
+.subhead{
+  margin:12px 0 6px;
+}
+.subhead .btn{
+  padding:8px 10px;
+  min-width:44px;
+  font-size:15px;
+  border-radius:12px;
+}
+.subhead .btn.danger{
+  font-size:15px;
+}
+.subhead span:last-child{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.sub-task-drop .task-row:first-child,
+.main-task-drop .task-row:first-child{
+  margin-top:4px;
+}
+.win-actions{
+  margin-bottom:8px;
+}
+@media(max-width:390px){
+  .win-card .delWin{
+    padding:8px 10px;
+    font-size:13px;
+  }
+  .subhead .btn{
+    padding:7px 9px;
+    min-width:40px;
+  }
+}
+
+/* V1.9 water tracker */
+.water-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+  margin:0 0 14px;
+}
+.water-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.water-top strong{
+  display:block;
+  font-size:18px;
+  font-weight:900;
+}
+.water-top span{
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  margin-top:4px;
+}
+.water-amount{
+  color:var(--blue);
+  font-size:16px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.droplets{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:5px;
+  align-items:center;
+}
+.drop{
+  height:34px;
+  border-radius:10px;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  font-size:19px;
+  opacity:.28;
+  display:grid;
+  place-items:center;
+  transition:transform .12s ease, opacity .12s ease, background .12s ease, box-shadow .12s ease;
+}
+.drop.filled{
+  opacity:1;
+  background:rgba(57,200,244,.12);
+  border-color:rgba(57,200,244,.45);
+  box-shadow:0 0 14px rgba(57,200,244,.08);
+}
+.drop:active{
+  transform:scale(.94);
+}
+.water-note{
+  color:var(--muted2);
+  font-size:12px;
+  line-height:1.35;
+  margin-top:10px;
+  font-weight:700;
+}
+@media(max-width:390px){
+  .droplets{gap:4px}
+  .drop{height:31px;font-size:17px}
+  .water-top{align-items:flex-start}
+  .water-amount{font-size:14px}
+}

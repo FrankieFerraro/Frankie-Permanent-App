@@ -5,11 +5,46 @@ const prettyDate = (key=todayKey()) => new Date(key+'T00:00:00').toLocaleDateStr
 const uid = () => Math.random().toString(36).slice(2,10);
 
 const MOTD = [
-  {q:'The compound effect is invisible until it is undeniable.', c:'Small actions feel meaningless in the moment. They are not. They are building something you cannot yet see.', r:'What small action, done daily for the next year, would transform an area of my life?'},
-  {q:'Build the day so tomorrow can trust you.', c:'Confidence is not a feeling you wait for. It is evidence you create through repeated follow-through.', r:'What would make tomorrow easier if I handled it today?'},
   {q:'Be patient with results and wildly impatient with action.', c:'Results lag. Action is immediate. Stop demanding instant proof and start demanding immediate movement.', r:'Where can I act before I feel ready?'},
-  {q:'The standard is built when no one is watching.', c:'The private choices are the ones that become your public life.', r:'What private standard do I need to raise today?'},
-  {q:'Simple done consistently beats perfect done randomly.', c:'A clean repeatable action is worth more than a complicated plan you avoid.', r:'What is the simplest useful move I can make today?'}
+  {q:'Build the day so tomorrow can trust you.', c:'Confidence is not a feeling you wait for. It is evidence you create through repeated follow-through.', r:'What would make tomorrow easier if I handled it today?'},
+  {q:'The standard is built when no one is watching.', c:'The private choices are the ones that become your public life. You do not rise to your dream. You fall to your standard.', r:'What private standard do I need to raise today?'},
+  {q:'Simple done consistently beats perfect done randomly.', c:'A clean repeatable action is worth more than a complicated plan you avoid. The win is in the repeat.', r:'What is the simplest useful move I can make today?'},
+  {q:'The compound effect is invisible until it is undeniable.', c:'Small actions feel meaningless in the moment. They are not. They are building something you cannot yet see.', r:'What small action, done daily for the next year, would transform an area of my life?'},
+  {q:'Discipline is remembering what you wanted when the mood changes.', c:'Your mood will negotiate. Your standard should not. Decide the rule before the resistance shows up.', r:'What rule do I need to follow today regardless of mood?'},
+  {q:'A clear next step beats a perfect life plan.', c:'Overthinking often hides as preparation. Clarity usually comes from action, not from waiting until every detail is known.', r:'What is the next honest step?'},
+  {q:'The life you want is built in the hours nobody claps for.', c:'The quiet work matters. The unseen reps become the visible result.', r:'What unseen rep needs to be done today?'},
+  {q:'You do not need more motivation. You need less negotiation.', c:'Every time you renegotiate the basics, you weaken trust with yourself. Make the important things automatic.', r:'Where am I negotiating with something that should be non-negotiable?'},
+  {q:'Make the right thing easier and the wrong thing harder.', c:'Environment beats willpower when the day gets heavy. Design your surroundings so your future self has fewer battles.', r:'What can I remove or set up today to make good choices easier?'},
+  {q:'Win the next block, not the whole future.', c:'Big goals feel heavy when you try to carry them all at once. Shrink the focus to the next clean hour.', r:'What would winning the next hour look like?'},
+  {q:'Consistency is self-respect made visible.', c:'Each follow-through is a vote for the person you are becoming. Small promises kept build a strong identity.', r:'What promise to myself will I keep today?'},
+  {q:'Act before comfort gives you permission.', c:'Comfort is not the signal to start. Often, the start is what creates comfort later.', r:'Where am I waiting to feel ready?'},
+  {q:'Pressure is easier to carry when your priorities are clear.', c:'A messy mind makes life feel heavier. Decide what matters most today and let that lead.', r:'What is the highest-priority move today?'},
+  {q:'The goal is not to feel unstoppable. The goal is to keep moving while human.', c:'Tired, uncertain and imperfect still counts. You do not need a perfect state to take a solid action.', r:'What can I do even if I do not feel at my best?'},
+  {q:'Your future is trained by your repeated response.', c:'How you respond today becomes the pattern you rely on tomorrow. Choose the response you want to become normal.', r:'What response do I want to train today?'},
+  {q:'If it matters, give it a place in the day.', c:'Important things do not survive on intention alone. They need time, space and a clear action.', r:'What important thing needs a real place in today?'},
+  {q:'A strong life is built by reducing avoidable chaos.', c:'Some stress is life. Some stress is poor systems. Remove the friction you keep recreating.', r:'What repeat problem can I systemise or clean up today?'},
+  {q:'Do the thing that makes you proud before you do the thing that numbs you.', c:'Avoidance gives short relief and long pressure. Action gives short discomfort and long peace.', r:'What am I avoiding that would make me proud if I handled it?'},
+  {q:'You can be kind to yourself without lowering the standard.', c:'Compassion and discipline are not opposites. The best version of you needs both.', r:'Where do I need both kindness and a higher standard?'},
+  {q:'Energy follows integrity.', c:'Every unfinished promise drains something. Every clean action gives a little power back.', r:'What small promise can I close today?'},
+  {q:'Direction beats speed when speed is pointed nowhere.', c:'Moving fast is useful only when the target is clear. Slow down long enough to aim, then move.', r:'What am I actually aiming at today?'},
+  {q:'You are one clean decision away from a better day.', c:'You do not need to rescue the whole week at once. Make one clean decision and let momentum build.', r:'What is the cleanest decision I can make right now?'},
+  {q:'The boring basics are undefeated.', c:'Sleep, movement, food, sunlight, water, work and honest conversations still carry most of the weight.', r:'Which basic needs attention today?'},
+  {q:'Do not let a bad hour become your identity.', c:'A moment can be messy without the day being lost. Reset quickly and return to the standard.', r:'What is my reset move today?'},
+  {q:'The path gets clearer when your actions get cleaner.', c:'Confusion often reduces after you remove the obvious distractions and handle the obvious next step.', r:'What obvious thing needs to be handled?'},
+  {q:'You build trust with yourself the same way you build it with anyone else — by showing up.', c:'Self-belief is not magic. It is a history of kept commitments.', r:'What commitment will I keep today?'},
+  {q:'Your family gets the benefit of the standards you build alone.', c:'Private discipline becomes public stability. The work you do on yourself becomes safety for the people you love.', r:'What private standard supports my future family?'},
+  {q:'Small wins are not small when they change your direction.', c:'A small action repeated can turn the entire ship. Respect the first move.', r:'What small win would shift my direction today?'},
+  {q:'Stop asking whether it is impressive. Ask whether it compounds.', c:'Flash fades. Compounding builds. Choose the action that creates future leverage.', r:'What action will compound if I repeat it?'},
+  {q:'Calm is built through preparation, not hope.', c:'You feel steadier when your systems are stronger. Prepare the basics before life gets loud.', r:'What can I prepare today to reduce pressure tomorrow?'},
+  {q:'Your standards are louder than your intentions.', c:'What you repeatedly accept becomes your real plan. Raise what you allow from yourself.', r:'What have I been accepting that needs to change?'},
+  {q:'The next version of you is built by today’s proof.', c:'Your identity updates when your actions give it evidence. Give yourself proof today.', r:'What proof can I create today?'},
+  {q:'Take the step that creates respect, not just relief.', c:'Relief is sometimes avoidance in disguise. Respect comes from doing the thing that actually matters.', r:'What choice would I respect tonight?'},
+  {q:'Strong people still need systems.', c:'Do not rely on toughness for everything. Build routines that carry you when motivation drops.', r:'What system would make this easier to repeat?'},
+  {q:'The day does not need to be perfect to be powerful.', c:'One focused block, one honest conversation or one completed task can change the tone of the day.', r:'What would make today powerful, even if it is not perfect?'},
+  {q:'Future freedom is purchased with present structure.', c:'The structure you build now gives your future family more options, peace and time.', r:'What structure would give my future more freedom?'},
+  {q:'Move like the person who already decided.', c:'Once the decision is made, the energy changes. Stop reopening the door every morning.', r:'What decision needs to be treated as already made?'},
+  {q:'Do the hard thing while it is still small.', c:'Most problems get heavier when ignored. Handle the early version before it becomes the expensive version.', r:'What small hard thing should I handle now?'},
+  {q:'A better life is usually a better set of defaults.', c:'Your default habits become your default future. Upgrade the automatic things.', r:'What default needs upgrading today?'}
 ];
 const MENTOR = {
   "I'm procrastinating": "You are not stuck because the task is impossible. You are stuck because the start feels bigger than it is. Shrink the task. Set a 10-minute timer and do the first ugly version. Momentum comes after movement, not before it.",
@@ -26,8 +61,8 @@ const MENTOR = {
 const defaultState = () => ({
   activeTab:'home', profile:'Frankie', streak:0, motdIndex:0, motdDate:todayKey(), calendarYear:new Date().getFullYear(), notesView:'today', selectedNoteDate:todayKey(), mentorRecent:[], resetPasscode:'2222', phoenixSeenDate:'',
   profiles:{
-    Frankie:{checklist:[{id:uid(),text:'Pizza',done:true}], notes:{}, wins:sampleWins()},
-    Jade:{checklist:[{id:uid(),text:'Drink water',done:false},{id:uid(),text:'Move body',done:false}], notes:{}, wins:sampleWins(true)}
+    Frankie:{checklist:[{id:uid(),text:'Pizza',done:true}], water:{}, notes:{}, wins:sampleWins()},
+    Jade:{checklist:[{id:uid(),text:'Move body',done:false}], water:{}, notes:{}, wins:sampleWins(true)}
   }
 });
 function sampleWins(jade=false){return [
@@ -37,6 +72,7 @@ function sampleWins(jade=false){return [
 function task(text){return {id:uid(),text,done:false}}
 let state = load();
 migrateState();
+setDailyMOTD();
 touchActive();
 seedNotesIfEmpty();
 function load(){try{return JSON.parse(localStorage.getItem('frankie2_state'))||defaultState()}catch{return defaultState()}}
@@ -47,13 +83,32 @@ function migrateState(){
   state.calendarYear = state.calendarYear || new Date().getFullYear();
   state.notesView = state.notesView || 'today';
   state.selectedNoteDate = state.selectedNoteDate || todayKey();
+  state.profiles = state.profiles || defaultState().profiles;
+  Object.keys(state.profiles).forEach(name => {
+    state.profiles[name].water = state.profiles[name].water || {};
+  });
 }
+function setDailyMOTD(){
+  const t = todayKey();
+  if(state.motdDate !== t){
+    const d = new Date(t+'T00:00:00');
+    const dayNumber = Math.floor(d.getTime()/86400000);
+    state.motdIndex = Math.abs(dayNumber) % MOTD.length;
+    state.motdDate = t;
+    save();
+  }
+}
+
 function touchActive(){
   state.lastActive[state.profile] = Date.now();
   save();
 }
 function save(){localStorage.setItem('frankie2_state', JSON.stringify(state))}
 function profile(){return state.profiles[state.profile]}
+function waterCount(){return profile().water?.[todayKey()] || 0}
+function waterMl(){return waterCount()*250}
+function waterComplete(){return waterCount()>=10}
+function setWater(count){setState(s=>{profile().water[todayKey()] = Math.max(0, Math.min(10, count));})}
 function setState(fn){fn(state); save(); render()}
 function seedNotesIfEmpty(){const n=profile().notes;if(Object.keys(n).length)return; const base=new Date(); for(let i=1;i<=25;i++){const d=new Date(base); d.setDate(base.getDate()-i); const k=d.toISOString().slice(0,10); n[k]=`Test note ${i}. This is a sample daily note so you can test the All Notes view, scrolling, calendar markers and opening older notes.`} save()}
 function parseDateInput(v){v=(v||'').trim(); if(!v)return null; let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; const d=new Date(v); if(!isNaN(d))return d.toISOString().slice(0,10); return null}
@@ -77,21 +132,34 @@ function render(){
   app.innerHTML = `<main class="shell">${screen()}</main>${nav()}`;
   bindCommon();
   if(state.activeTab==='notes') bindNotes();
+  focusPendingEditable();
   maybeShowPhoenix();
 }
 function nav(){const tabs=[['home','⌂','Home'],['wins','🏆','Wins'],['notes','▤','Notes'],['mentor','🧠','Mentor'],['stats','▮','Stats'],['settings','⚙','Settings']];return `<nav class="nav"><div class="nav-inner">${tabs.map(t=>`<button class="nav-btn ${state.activeTab===t[0]?'active':''}" data-tab="${t[0]}"><span class="nav-ico">${t[1]}</span>${t[2]}</button>`).join('')}</div></nav>`}
 function bindCommon(){ $$('.nav-btn').forEach(b=>b.onclick=()=>setState(s=>s.activeTab=b.dataset.tab)); }
 function screen(){return ({home:home(),wins:wins(),notes:notes(),mentor:mentor(),stats:stats(),settings:settings()})[state.activeTab]}
-function home(){const p=profile(), total=p.checklist.length, done=p.checklist.filter(x=>x.done).length, score=total?Math.round(done/total*100):0, m=MOTD[state.motdIndex%MOTD.length];return `
+function home(){const p=profile(), waterDone=waterComplete()?1:0, total=p.checklist.length+1, done=p.checklist.filter(x=>x.done).length+waterDone, score=total?Math.round(done/total*100):0, m=MOTD[state.motdIndex%MOTD.length];return `
   <section class="header"><div><h1 class="title">Frankie 2.0</h1><div class="sub">${prettyDate()}</div></div><button class="avatar" id="switchProfile">${state.profile[0]}</button></section>
   <section class="card motd"><div class="motd-label">MESSAGE OF THE DAY</div><p class="motd-quote">"${escapeHtml(m.q)}"</p><div class="motd-body">${escapeHtml(m.c)}</div><div class="reflect"><div class="reflect-title">REFLECT</div><div class="reflect-text">${escapeHtml(m.r)}</div></div></section>
   <section class="card score-streak"><div><div class="progress-ring" style="--score:${score}"><strong>${score}%</strong><span>Today</span></div><div class="card-title">Daily Score</div></div><div class="divider"></div><div><div class="flame-wrap"><div class="flame"><span class="flame-number">${state.streak}</span></div></div><div class="card-title">Streak</div></div></section>
   <div class="between"><div class="list-title">Daily Checklist</div><div class="gold"><strong>${done}/${total}</strong></div></div>
+  ${waterTracker()}
   <section>${p.checklist.map(item=>`<div class="check-row ${item.done?'done':''}" data-id="${item.id}"><button class="tick checkTick">✓</button><div class="row-text">${escapeHtml(item.text)}</div><button class="icon-btn editCheck">✏️</button><button class="icon-btn delCheck">🗑️</button></div>`).join('')}</section>
   <button class="btn full" id="addCheck">+ Add item</button>`}
-function wins(){const p=profile(); const achievements=countAchievements(p.wins); const tasks=countTasks(p.wins);return `<section class="header"><div><h1 class="title">Wins 🏆</h1><div class="sub">Achievement List</div></div><button class="avatar">🏆</button></section><div class="between win-head"><div><span class="gold"><strong>${achievements}</strong></span> <span class="muted">achievements of ${tasks} tasks</span></div><button class="btn" id="addMain">+ Main heading</button></div>${p.wins.map(w=>winCard(w)).join('')}`}
-function winCard(w){return `<section class="card win-card drag-item" data-drag-type="win" data-win="${w.id}"><div class="between win-drag-zone"><div class="win-title"><span class="drag-grip">☰</span> 🏆 ${escapeHtml(w.title)}</div><button class="btn danger delWin">🗑️ Delete</button></div><div class="win-actions"><button class="btn addSub">➕ subheading</button><button class="btn addMainTask">➕ task</button></div><div class="main-task-drop" data-drop-type="main" data-win="${w.id}">${w.tasks.map(t=>taskRow(t,w.id,'main')).join('')}</div>${w.subs.map(sub=>`<div class="sub-block drag-item" data-drag-type="sub" data-win="${w.id}" data-sub="${sub.id}"><div class="subhead"><span><span class="drag-grip">☰</span> 📌 ${escapeHtml(sub.title)}</span><span><button class="btn addSubTask">➕</button> <button class="btn danger delSub">🗑️</button></span></div><div class="sub-task-drop" data-drop-type="sub" data-win="${w.id}" data-sub="${sub.id}">${sub.tasks.map(t=>taskRow(t,w.id,sub.id)).join('')}</div></div>`).join('')}</section>`}
-function taskRow(t,winId='',subId='main'){return `<div class="task-row drag-item ${t.done?'done':''}" data-drag-type="task" data-win="${winId}" data-sub="${subId}" data-task="${t.id}"><button class="tick winTick">✓</button><div class="row-text"><span class="drag-grip">☰</span> ${escapeHtml(t.text)}</div><button class="icon-btn editTask">✏️</button><button class="icon-btn delTask">🗑️</button></div>`}
+function waterTracker(){
+  const count = waterCount();
+  const ml = waterMl();
+  const label = ml>=1000 ? (ml/1000).toFixed(ml%1000===0?0:2)+'L' : ml+'ml';
+  return `<section class="water-card">
+    <div class="water-top"><div><strong>💧 Water Intake</strong><span>Permanent daily task</span></div><div class="water-amount">${label} / 2.5L</div></div>
+    <div class="droplets">${Array.from({length:10},(_,i)=>`<button class="drop ${i<count?'filled':''}" data-water="${i+1}" aria-label="${(i+1)*250}ml">💧</button>`).join('')}</div>
+    <div class="water-note">Tap a droplet to fill up to that amount. Each droplet = 250ml.</div>
+  </section>`
+}
+
+function wins(){const p=profile(); const achievements=countAchievements(p.wins); const tasks=countTasks(p.wins); const groups=p.wins.length;return `<section class="header"><div><h1 class="title">Wins 🏆</h1><div class="sub">Achievement List</div></div><button class="avatar">🏆</button></section><div class="between win-head"><div><div><span class="gold"><strong>${achievements}</strong></span> <span class="muted">achievements of ${tasks} tasks</span></div><div class="tiny win-group-count">📁 ${groups} main heading${groups===1?'':'s'}</div></div><button class="btn" id="addMain">+ Main heading</button></div>${p.wins.map(w=>winCard(w)).join('')}`}
+function winCard(w){return `<section class="card win-card drag-item" data-drag-type="win" data-win="${w.id}"><div class="between win-drag-zone"><div class="win-title"><span class="drag-grip">☰</span> 🏆 <span class="editable editable-title" contenteditable="true" data-edit-type="win" data-edit-id="${w.id}" data-placeholder="Main heading">${escapeHtml(w.title)}</span></div><button class="btn danger delWin">🗑️ Delete</button></div><div class="win-actions"><button class="btn addSub">➕ subheading</button><button class="btn addMainTask">➕ task</button></div><div class="main-task-drop" data-drop-type="main" data-win="${w.id}">${w.tasks.map(t=>taskRow(t,w.id,'main')).join('')}</div>${w.subs.map(sub=>`<div class="sub-block drag-item" data-drag-type="sub" data-win="${w.id}" data-sub="${sub.id}"><div class="subhead"><span class="sub-label"><span class="drag-grip">☰</span> 📌 <span class="editable editable-sub" contenteditable="true" data-edit-type="sub" data-edit-id="${sub.id}" data-placeholder="Subheading">${escapeHtml(sub.title)}</span></span><span><button class="btn addSubTask">➕</button> <button class="btn danger delSub">🗑️</button></span></div><div class="sub-task-drop" data-drop-type="sub" data-win="${w.id}" data-sub="${sub.id}">${sub.tasks.map(t=>taskRow(t,w.id,sub.id)).join('')}</div></div>`).join('')}</section>`}
+function taskRow(t,winId='',subId='main'){return `<div class="task-row drag-item ${t.done?'done':''}" data-drag-type="task" data-win="${winId}" data-sub="${subId}" data-task="${t.id}"><button class="tick winTick">✓</button><span class="drag-grip task-grip">☰</span><div class="row-text editable editable-task" contenteditable="true" data-edit-type="task" data-edit-id="${t.id}" data-placeholder="New task">${escapeHtml(t.text)}</div><button class="icon-btn editTask">✏️</button><button class="icon-btn delTask">🗑️</button></div>`}
 function notes(){return `<section class="header notes-header"><h1 class="title">Notes 📝</h1><div class="row note-actions"><button class="btn" id="todayNote">Today</button><button class="btn" id="goDate">Go to date</button><button class="btn" id="exportNotes">Export</button></div></section><section class="segment"><button class="seg-btn ${state.notesView==='today'?'active':''}" data-view="today">Today</button><button class="seg-btn ${state.notesView==='all'?'active':''}" data-view="all">All Notes</button><button class="seg-btn ${state.notesView==='calendar'?'active':''}" data-view="calendar">Calendar</button></section>${notesBody()}`}
 function notesBody(){const p=profile(); if(state.notesView==='today'){const val=p.notes[state.selectedNoteDate]||'';return `<div class="sub">${prettyDate(state.selectedNoteDate)}</div><textarea class="textarea" id="noteText" placeholder="Write today's note...">${escapeHtml(val)}</textarea><div class="row" style="margin-top:12px"><button class="btn" id="saveNote">💾 Save today</button><button class="btn ghost" id="copyNote">📋 Copy today</button></div>`}
  if(state.notesView==='all'){const entries=Object.entries(p.notes).sort((a,b)=>b[0].localeCompare(a[0])); if(!entries.length)return `<div class="empty"><div>📝<strong>No notes yet</strong><span>Switch to Today to write your first note</span></div></div>`; return `<section class="card" style="padding:0">${entries.map(([k,v])=>`<div class="note-card" data-date="${k}"><div><div class="note-date">${prettyDate(k)}</div><div class="note-preview">${escapeHtml(v.slice(0,85))}${v.length>85?'...':''}</div></div><button class="icon-btn copyOne">📋</button></div>`).join('')}</section>`}
@@ -106,7 +174,7 @@ function mentor(){
 }
 function stats(){
   const p=profile(), total=countTasks(p.wins), ach=countAchievements(p.wins), notes=Object.keys(p.notes).length;
-  const checklist=p.checklist.length?Math.round(p.checklist.filter(x=>x.done).length/p.checklist.length*100):0;
+  const checklistTotal=p.checklist.length+1; const checklistDone=p.checklist.filter(x=>x.done).length+(waterComplete()?1:0); const checklist=checklistTotal?Math.round(checklistDone/checklistTotal*100):0;
   const partner=state.profile==='Frankie'?'Jade':'Frankie';
   const partnerActive=timeAgo(state.lastActive?.[partner]);
   return `<h1 class="title">Stats</h1>
@@ -115,11 +183,11 @@ function stats(){
     <div class="small-card stat-card"><div class="stat-num partner-active">${partnerActive}</div><div class="muted">${partner} Last Active</div><div class="tiny">Local until sync is added</div></div>
     <div class="small-card stat-card"><div class="stat-num" style="color:var(--green)">${ach}</div><div class="muted">Achievements</div><div class="tiny">of ${total} tasks</div></div>
     <div class="small-card stat-card"><div class="stat-num" style="color:var(--blue)">${notes}</div><div class="muted">Notes Written</div></div>
-    <div class="small-card stat-card"><div class="stat-num gold">${checklist}%</div><div class="muted">Checklist Rate</div><div class="tiny">${p.checklist.filter(x=>x.done).length}/${p.checklist.length} today</div></div>
+    <div class="small-card stat-card"><div class="stat-num gold">${checklist}%</div><div class="muted">Checklist Rate</div><div class="tiny">${checklistDone}/${checklistTotal} today</div></div>
   </section>
   <section class="card stats-card"><div class="between"><h2>Daily Score — Last 7 Days</h2><span class="muted">Avg ${checklist}%</span></div><div class="bars">${['We','Th','Fr','Sa','Su','Mo','Tu'].map(d=>`<div><div class="bar" style="--h:${checklist||5}"></div><div class="tiny">${d}</div></div>`).join('')}</div></section>`
 }
-function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V1.5</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
+function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V1.9</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
 
 
 function maybeShowPhoenix(){
@@ -155,12 +223,71 @@ function showPhoenix(){
 }
 
 
+
+function focusPendingEditable(){
+  if(!focusAfterRender) return;
+  const {type,id}=focusAfterRender;
+  focusAfterRender=null;
+  setTimeout(()=>focusEditable(type,id,true),20);
+}
+function focusEditable(type,id,selectAll=false){
+  const el=document.querySelector(`[data-edit-type="${type}"][data-edit-id="${id}"]`);
+  if(!el) return;
+  el.focus();
+  const range=document.createRange();
+  range.selectNodeContents(el);
+  if(!selectAll) range.collapse(false);
+  const sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+function getPlainText(el){
+  return (el.innerText || el.textContent || '').replace(/\n/g,' ').trim();
+}
+function updateEditable(type,id,value){
+  if(type==='win'){
+    const w=profile().wins.find(w=>w.id===id);
+    if(w) w.title=value;
+  }
+  if(type==='sub'){
+    for(const w of profile().wins){
+      const s=w.subs.find(s=>s.id===id);
+      if(s){ s.title=value; break; }
+    }
+  }
+  if(type==='task'){
+    const t=findTask(profile().wins,id);
+    if(t) t.text=value;
+  }
+  save();
+}
+document.addEventListener('input', e=>{
+  const el=e.target.closest?.('[contenteditable="true"][data-edit-type]');
+  if(!el) return;
+  updateEditable(el.dataset.editType, el.dataset.editId, getPlainText(el));
+});
+document.addEventListener('blur', e=>{
+  const el=e.target.closest?.('[contenteditable="true"][data-edit-type]');
+  if(!el) return;
+  updateEditable(el.dataset.editType, el.dataset.editId, getPlainText(el));
+}, true);
+document.addEventListener('keydown', e=>{
+  const el=e.target.closest?.('[contenteditable="true"][data-edit-type]');
+  if(!el) return;
+  if(e.key==='Enter'){
+    e.preventDefault();
+    updateEditable(el.dataset.editType, el.dataset.editId, getPlainText(el));
+    el.blur();
+  }
+});
+
+let focusAfterRender = null;
 let dragInfo = null;
 let longPressTimer = null;
 let dragPoint = null;
 
 function isInteractiveTarget(el){
-  return !!el.closest('button,input,textarea,.btn,.icon-btn,.tick');
+  return !!el.closest('button,input,textarea,.btn,.icon-btn,.tick,[contenteditable="true"]');
 }
 function getDragElement(el){
   const task = el.closest('.task-row[data-task]');
@@ -345,22 +472,54 @@ function countTasks(wins){return wins.reduce((a,w)=>a+w.tasks.length+w.subs.redu
 function countAchievements(wins){return wins.reduce((a,w)=>a+w.tasks.filter(t=>t.done).length+w.subs.reduce((b,s)=>b+s.tasks.filter(t=>t.done).length,0),0)}
 function findTask(wins,id){for(const w of wins){let t=w.tasks.find(t=>t.id===id); if(t)return t; for(const s of w.subs){t=s.tasks.find(t=>t.id===id); if(t)return t}}}
 
+
+function getOrCreateSafeHoldingWin(excludeId){
+  let holder = profile().wins.find(w => w.title === 'Moved Items' && w.id !== excludeId);
+  if(!holder){
+    holder = {id:uid(), title:'Moved Items', subs:[], tasks:[]};
+    profile().wins.push(holder);
+  }
+  return holder;
+}
+function safeDeleteSub(winId, subId){
+  const w = profile().wins.find(w => w.id === winId);
+  if(!w) return;
+  const index = w.subs.findIndex(s => s.id === subId);
+  if(index < 0) return;
+  const sub = w.subs.splice(index,1)[0];
+  if(sub.tasks?.length){
+    w.tasks.push(...sub.tasks);
+  }
+}
+function safeDeleteWin(winId){
+  const index = profile().wins.findIndex(w => w.id === winId);
+  if(index < 0) return;
+  const removed = profile().wins.splice(index,1)[0];
+  const hasContent = (removed.tasks?.length || 0) + removed.subs.reduce((a,s)=>a+(s.tasks?.length||0),0);
+  if(hasContent || removed.subs.length){
+    const holder = getOrCreateSafeHoldingWin(removed.id);
+    holder.tasks.push(...removed.tasks);
+    holder.subs.push(...removed.subs);
+  }
+}
+
 // delegated interactions
 document.addEventListener('click', e=>{
  const id=e.target.id, btn=e.target.closest('button'), row=e.target.closest('[data-id]'), winEl=e.target.closest('[data-win]'), subEl=e.target.closest('[data-sub]'), taskEl=e.target.closest('[data-task]');
  if(id==='switchProfile'||id==='switchProfile2')return setState(s=>{s.profile=s.profile==='Frankie'?'Jade':'Frankie'; s.lastActive=s.lastActive||{}; s.lastActive[s.profile]=Date.now(); seedNotesIfEmpty()});
  if(id==='addCheck'){const text=prompt('New checklist item'); if(text)setState(s=>profile().checklist.push({id:uid(),text,done:false}))}
+ if(btn?.classList.contains('drop')){setWater(Number(btn.dataset.water));}
  if(btn?.classList.contains('checkTick'))setState(s=>{const it=profile().checklist.find(x=>x.id===row.dataset.id); it.done=!it.done});
  if(btn?.classList.contains('editCheck')){const it=profile().checklist.find(x=>x.id===row.dataset.id); const text=prompt('Edit item',it.text); if(text!==null)setState(s=>it.text=text)}
  if(btn?.classList.contains('delCheck'))setState(s=>profile().checklist=profile().checklist.filter(x=>x.id!==row.dataset.id));
- if(id==='addMain'){const title=prompt('Main heading name'); if(title)setState(s=>profile().wins.push({id:uid(),title,subs:[],tasks:[]}))}
- if(btn?.classList.contains('delWin'))setState(s=>profile().wins=profile().wins.filter(w=>w.id!==winEl.dataset.win));
- if(btn?.classList.contains('addSub')){const title=prompt('Subheading name'); if(title)setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).subs.push({id:uid(),title,tasks:[]}))}
- if(btn?.classList.contains('addMainTask')){const text=prompt('Task'); if(text)setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).tasks.push(task(text)))}
- if(btn?.classList.contains('addSubTask')){const text=prompt('Task'); if(text)setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).subs.find(x=>x.id===subEl.dataset.sub).tasks.push(task(text)))}
- if(btn?.classList.contains('delSub'))setState(s=>{const w=profile().wins.find(w=>w.id===winEl.dataset.win); w.subs=w.subs.filter(x=>x.id!==subEl.dataset.sub)});
+ if(id==='addMain'){const newId=uid(); focusAfterRender={type:'win',id:newId}; setState(s=>profile().wins.push({id:newId,title:'',subs:[],tasks:[]}))}
+ if(btn?.classList.contains('delWin'))setState(s=>safeDeleteWin(winEl.dataset.win));
+ if(btn?.classList.contains('addSub')){const newId=uid(); focusAfterRender={type:'sub',id:newId}; setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).subs.push({id:newId,title:'',tasks:[]}))}
+ if(btn?.classList.contains('addMainTask')){const newId=uid(); focusAfterRender={type:'task',id:newId}; setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).tasks.push({id:newId,text:'',done:false}))}
+ if(btn?.classList.contains('addSubTask')){const newId=uid(); focusAfterRender={type:'task',id:newId}; setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).subs.find(x=>x.id===subEl.dataset.sub).tasks.push({id:newId,text:'',done:false}))}
+ if(btn?.classList.contains('delSub'))setState(s=>safeDeleteSub(winEl.dataset.win, subEl.dataset.sub));
  if(btn?.classList.contains('winTick'))setState(s=>{const t=findTask(profile().wins,taskEl.dataset.task); t.done=!t.done});
- if(btn?.classList.contains('editTask')){const t=findTask(profile().wins,taskEl.dataset.task); const text=prompt('Edit task',t.text); if(text!==null)setState(s=>t.text=text)}
+ if(btn?.classList.contains('editTask')){focusEditable('task',taskEl.dataset.task)}
  if(btn?.classList.contains('delTask'))setState(s=>{for(const w of profile().wins){w.tasks=w.tasks.filter(t=>t.id!==taskEl.dataset.task); for(const sub of w.subs)sub.tasks=sub.tasks.filter(t=>t.id!==taskEl.dataset.task)}});
  if(btn?.classList.contains('mentor-item')){const text=btn.dataset.mentor; setState(s=>{s.mentorOpen=s.mentorOpen===text?null:text; s.mentorRecent=[{text,date:todayKey()},...s.mentorRecent.filter(x=>x.text!==text)].slice(0,8)})}
  if(id==='incStreak')setState(s=>{s.streak++; s.activeTab='home'; s.phoenixSeenDate='';});

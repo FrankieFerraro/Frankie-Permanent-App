@@ -54,3 +54,29 @@ V1.5 updates
 - Added first version of long-press drag and reorder in Wins
 - Tasks can be moved between main headings and subheadings
 - Subheadings and main heading cards can also be reordered
+
+
+V1.6 updates
+- Wins add buttons now create inline editable rows instead of pop-ups
+- Main headings, subheadings and tasks can be edited directly by tapping the text
+- Pencil button now focuses the task text instead of opening a prompt
+
+
+V1.7 updates
+- Added main heading count to Wins
+- Made heading/subheading delete buttons more compact
+- Deleting a subheading now keeps its tasks by moving them under the main heading
+- Deleting a main heading now moves its content into a safe Moved Items section instead of deleting everything
+
+
+V1.8 updates
+- Replaced the Message of the Day library with the higher-standard Frankie-built quote set
+- Added a larger daily rotation library
+- Message changes automatically once per day without a New button
+
+
+V1.9 updates
+- Added permanent Water Intake tracker to Home
+- Water counts as one daily checklist task
+- 10 droplets represent 2.5L total, 250ml each
+- Tapping a droplet fills all previous droplets automatically
