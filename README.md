@@ -35,3 +35,22 @@ V1.1 polish notes
 - Wins tasks also include pencil and trash buttons.
 - Flame animation slowed down and streak number kept integrated inside the flame.
 - Extra emoji cues added across Wins and Notes for a smoother app-like feel.
+
+
+V1.3 updates
+- Phoenix streak intro animation added
+- Shows streak in a center-screen animation then disappears
+
+
+V1.4 updates
+- Calendar layout tightened to stop horizontal overflow
+- Stats spacing fixed
+- Bottom duplicate Shared Streak card removed
+- Partner Last Active card added
+- Mentor responses now open in themed dropdown cards instead of old alert boxes
+
+
+V1.5 updates
+- Added first version of long-press drag and reorder in Wins
+- Tasks can be moved between main headings and subheadings
+- Subheadings and main heading cards can also be reordered

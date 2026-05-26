@@ -24,7 +24,7 @@ const MENTOR = {
 };
 
 const defaultState = () => ({
-  activeTab:'home', profile:'Frankie', streak:0, motdIndex:0, motdDate:todayKey(), calendarYear:new Date().getFullYear(), notesView:'today', selectedNoteDate:todayKey(), mentorRecent:[], resetPasscode:'2222',
+  activeTab:'home', profile:'Frankie', streak:0, motdIndex:0, motdDate:todayKey(), calendarYear:new Date().getFullYear(), notesView:'today', selectedNoteDate:todayKey(), mentorRecent:[], resetPasscode:'2222', phoenixSeenDate:'',
   profiles:{
     Frankie:{checklist:[{id:uid(),text:'Pizza',done:true}], notes:{}, wins:sampleWins()},
     Jade:{checklist:[{id:uid(),text:'Drink water',done:false},{id:uid(),text:'Move body',done:false}], notes:{}, wins:sampleWins(true)}
@@ -36,43 +36,310 @@ function sampleWins(jade=false){return [
 ]}
 function task(text){return {id:uid(),text,done:false}}
 let state = load();
+migrateState();
+touchActive();
 seedNotesIfEmpty();
 function load(){try{return JSON.parse(localStorage.getItem('frankie2_state'))||defaultState()}catch{return defaultState()}}
+function migrateState(){
+  state.lastActive = state.lastActive || {Frankie:null,Jade:null};
+  state.mentorOpen = state.mentorOpen || null;
+  state.phoenixSeenDate = state.phoenixSeenDate || '';
+  state.calendarYear = state.calendarYear || new Date().getFullYear();
+  state.notesView = state.notesView || 'today';
+  state.selectedNoteDate = state.selectedNoteDate || todayKey();
+}
+function touchActive(){
+  state.lastActive[state.profile] = Date.now();
+  save();
+}
 function save(){localStorage.setItem('frankie2_state', JSON.stringify(state))}
 function profile(){return state.profiles[state.profile]}
 function setState(fn){fn(state); save(); render()}
 function seedNotesIfEmpty(){const n=profile().notes;if(Object.keys(n).length)return; const base=new Date(); for(let i=1;i<=25;i++){const d=new Date(base); d.setDate(base.getDate()-i); const k=d.toISOString().slice(0,10); n[k]=`Test note ${i}. This is a sample daily note so you can test the All Notes view, scrolling, calendar markers and opening older notes.`} save()}
 function parseDateInput(v){v=(v||'').trim(); if(!v)return null; let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; const d=new Date(v); if(!isNaN(d))return d.toISOString().slice(0,10); return null}
 function escapeHtml(s=''){return s.replace(/[&<>'"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]))}
+function timeAgo(ts){
+  if(!ts) return 'Not used yet';
+  const diff = Math.max(0, Date.now() - ts);
+  const mins = Math.floor(diff/60000);
+  if(mins < 1) return 'Just now';
+  if(mins < 60) return mins + ' min ago';
+  const hrs = Math.floor(mins/60);
+  if(hrs < 24) return hrs + (hrs===1?' hour ago':' hours ago');
+  const days = Math.floor(hrs/24);
+  const rem = hrs % 24;
+  if(days < 7) return days + (days===1?' day':' days') + (rem ? ' ' + rem + 'h ago' : ' ago');
+  return prettyDate(new Date(ts).toISOString().slice(0,10));
+}
 
 function render(){
   const app=$('#app');
   app.innerHTML = `<main class="shell">${screen()}</main>${nav()}`;
   bindCommon();
   if(state.activeTab==='notes') bindNotes();
+  maybeShowPhoenix();
 }
 function nav(){const tabs=[['home','⌂','Home'],['wins','🏆','Wins'],['notes','▤','Notes'],['mentor','🧠','Mentor'],['stats','▮','Stats'],['settings','⚙','Settings']];return `<nav class="nav"><div class="nav-inner">${tabs.map(t=>`<button class="nav-btn ${state.activeTab===t[0]?'active':''}" data-tab="${t[0]}"><span class="nav-ico">${t[1]}</span>${t[2]}</button>`).join('')}</div></nav>`}
 function bindCommon(){ $$('.nav-btn').forEach(b=>b.onclick=()=>setState(s=>s.activeTab=b.dataset.tab)); }
 function screen(){return ({home:home(),wins:wins(),notes:notes(),mentor:mentor(),stats:stats(),settings:settings()})[state.activeTab]}
 function home(){const p=profile(), total=p.checklist.length, done=p.checklist.filter(x=>x.done).length, score=total?Math.round(done/total*100):0, m=MOTD[state.motdIndex%MOTD.length];return `
-  <section class="header"><div><h1 class="title">Hey ${state.profile} 🔥</h1><div class="sub">${prettyDate()}</div></div><button class="avatar" id="switchProfile">${state.profile[0]}</button></section>
-  <section class="card motd"><div class="between"><div class="motd-label">MESSAGE OF THE DAY</div><button id="newMotd" class="btn">↻ New</button></div><p class="motd-quote">"${escapeHtml(m.q)}"</p><div class="motd-body">${escapeHtml(m.c)}</div><div class="reflect"><div class="reflect-title">REFLECT</div><div class="reflect-text">${escapeHtml(m.r)}</div></div></section>
+  <section class="header"><div><h1 class="title">Frankie 2.0</h1><div class="sub">${prettyDate()}</div></div><button class="avatar" id="switchProfile">${state.profile[0]}</button></section>
+  <section class="card motd"><div class="motd-label">MESSAGE OF THE DAY</div><p class="motd-quote">"${escapeHtml(m.q)}"</p><div class="motd-body">${escapeHtml(m.c)}</div><div class="reflect"><div class="reflect-title">REFLECT</div><div class="reflect-text">${escapeHtml(m.r)}</div></div></section>
   <section class="card score-streak"><div><div class="progress-ring" style="--score:${score}"><strong>${score}%</strong><span>Today</span></div><div class="card-title">Daily Score</div></div><div class="divider"></div><div><div class="flame-wrap"><div class="flame"><span class="flame-number">${state.streak}</span></div></div><div class="card-title">Streak</div></div></section>
   <div class="between"><div class="list-title">Daily Checklist</div><div class="gold"><strong>${done}/${total}</strong></div></div>
   <section>${p.checklist.map(item=>`<div class="check-row ${item.done?'done':''}" data-id="${item.id}"><button class="tick checkTick">✓</button><div class="row-text">${escapeHtml(item.text)}</div><button class="icon-btn editCheck">✏️</button><button class="icon-btn delCheck">🗑️</button></div>`).join('')}</section>
   <button class="btn full" id="addCheck">+ Add item</button>`}
 function wins(){const p=profile(); const achievements=countAchievements(p.wins); const tasks=countTasks(p.wins);return `<section class="header"><div><h1 class="title">Wins 🏆</h1><div class="sub">Achievement List</div></div><button class="avatar">🏆</button></section><div class="between win-head"><div><span class="gold"><strong>${achievements}</strong></span> <span class="muted">achievements of ${tasks} tasks</span></div><button class="btn" id="addMain">+ Main heading</button></div>${p.wins.map(w=>winCard(w)).join('')}`}
-function winCard(w){return `<section class="card win-card" data-win="${w.id}"><div class="between"><div class="win-title">🏆 ${escapeHtml(w.title)}</div><button class="btn danger delWin">🗑️ Delete</button></div><div class="win-actions"><button class="btn addSub">➕ subheading</button><button class="btn addMainTask">➕ task</button></div>${w.tasks.map(t=>taskRow(t)).join('')}${w.subs.map(sub=>`<div class="subhead" data-sub="${sub.id}"><span>📌 ${escapeHtml(sub.title)}</span><span><button class="btn addSubTask">➕</button> <button class="btn danger delSub">🗑️</button></span></div>${sub.tasks.map(t=>taskRow(t)).join('')}`).join('')}</section>`}
-function taskRow(t){return `<div class="task-row ${t.done?'done':''}" data-task="${t.id}"><button class="tick winTick">✓</button><div class="row-text">${escapeHtml(t.text)}</div><button class="icon-btn editTask">✏️</button><button class="icon-btn delTask">🗑️</button></div>`}
-function notes(){return `<section class="header"><h1 class="title">Notes 📝</h1><div class="row"><button class="btn" id="goDate">Go to date</button><button class="btn" id="exportNotes">Export</button></div></section><section class="segment"><button class="seg-btn ${state.notesView==='today'?'active':''}" data-view="today">Today</button><button class="seg-btn ${state.notesView==='all'?'active':''}" data-view="all">All Notes</button><button class="seg-btn ${state.notesView==='calendar'?'active':''}" data-view="calendar">Calendar</button></section>${notesBody()}`}
+function winCard(w){return `<section class="card win-card drag-item" data-drag-type="win" data-win="${w.id}"><div class="between win-drag-zone"><div class="win-title"><span class="drag-grip">☰</span> 🏆 ${escapeHtml(w.title)}</div><button class="btn danger delWin">🗑️ Delete</button></div><div class="win-actions"><button class="btn addSub">➕ subheading</button><button class="btn addMainTask">➕ task</button></div><div class="main-task-drop" data-drop-type="main" data-win="${w.id}">${w.tasks.map(t=>taskRow(t,w.id,'main')).join('')}</div>${w.subs.map(sub=>`<div class="sub-block drag-item" data-drag-type="sub" data-win="${w.id}" data-sub="${sub.id}"><div class="subhead"><span><span class="drag-grip">☰</span> 📌 ${escapeHtml(sub.title)}</span><span><button class="btn addSubTask">➕</button> <button class="btn danger delSub">🗑️</button></span></div><div class="sub-task-drop" data-drop-type="sub" data-win="${w.id}" data-sub="${sub.id}">${sub.tasks.map(t=>taskRow(t,w.id,sub.id)).join('')}</div></div>`).join('')}</section>`}
+function taskRow(t,winId='',subId='main'){return `<div class="task-row drag-item ${t.done?'done':''}" data-drag-type="task" data-win="${winId}" data-sub="${subId}" data-task="${t.id}"><button class="tick winTick">✓</button><div class="row-text"><span class="drag-grip">☰</span> ${escapeHtml(t.text)}</div><button class="icon-btn editTask">✏️</button><button class="icon-btn delTask">🗑️</button></div>`}
+function notes(){return `<section class="header notes-header"><h1 class="title">Notes 📝</h1><div class="row note-actions"><button class="btn" id="todayNote">Today</button><button class="btn" id="goDate">Go to date</button><button class="btn" id="exportNotes">Export</button></div></section><section class="segment"><button class="seg-btn ${state.notesView==='today'?'active':''}" data-view="today">Today</button><button class="seg-btn ${state.notesView==='all'?'active':''}" data-view="all">All Notes</button><button class="seg-btn ${state.notesView==='calendar'?'active':''}" data-view="calendar">Calendar</button></section>${notesBody()}`}
 function notesBody(){const p=profile(); if(state.notesView==='today'){const val=p.notes[state.selectedNoteDate]||'';return `<div class="sub">${prettyDate(state.selectedNoteDate)}</div><textarea class="textarea" id="noteText" placeholder="Write today's note...">${escapeHtml(val)}</textarea><div class="row" style="margin-top:12px"><button class="btn" id="saveNote">💾 Save today</button><button class="btn ghost" id="copyNote">📋 Copy today</button></div>`}
  if(state.notesView==='all'){const entries=Object.entries(p.notes).sort((a,b)=>b[0].localeCompare(a[0])); if(!entries.length)return `<div class="empty"><div>📝<strong>No notes yet</strong><span>Switch to Today to write your first note</span></div></div>`; return `<section class="card" style="padding:0">${entries.map(([k,v])=>`<div class="note-card" data-date="${k}"><div><div class="note-date">${prettyDate(k)}</div><div class="note-preview">${escapeHtml(v.slice(0,85))}${v.length>85?'...':''}</div></div><button class="icon-btn copyOne">📋</button></div>`).join('')}</section>`}
  return calendar();}
 function calendar(){const y=state.calendarYear; const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `<div class="calendar-head"><button class="btn" id="prevYear">‹</button><div class="year-title">${y}</div><button class="btn" id="nextYear">›</button></div><section class="months">${months.map((m,i)=>month(y,i,m)).join('')}</section>`}
 function month(y,mi,name){const first=new Date(y,mi,1).getDay(); const days=new Date(y,mi+1,0).getDate(); let cells=''; for(let i=0;i<first;i++)cells+=`<div></div>`; for(let d=1;d<=days;d++){const k=`${y}-${String(mi+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; cells+=`<button class="day ${k===todayKey()?'today':''} ${profile().notes[k]?'has-note':''}" data-date="${k}">${d}</button>`} return `<div class="month"><div class="month-title">${name}</div><div class="days">${cells}</div></div>`}
-function mentor(){return `<section class="header"><div><h1 class="title">Mentor</h1><div class="sub">What do you need right now?</div></div></section>${Object.keys(MENTOR).map((k,i)=>`<button class="mentor-item" data-mentor="${escapeHtml(k)}"><span>${['⌛','🗺️','🧭','🌊','🌧️','⚔️','🔭','🔄','🚧'][i]} &nbsp; ${escapeHtml(k)}</span><span class="muted">›</span></button>`).join('')}<div class="section-label">RECENT</div>${state.mentorRecent.slice(0,3).map(x=>`<div class="note-card"><span>${escapeHtml(x.text)}</span><span class="muted">${prettyDate(x.date)}</span></div>`).join('')}`}
-function stats(){const p=profile(), total=countTasks(p.wins), ach=countAchievements(p.wins), notes=Object.keys(p.notes).length, checklist=p.checklist.length?Math.round(p.checklist.filter(x=>x.done).length/p.checklist.length*100):0;return `<h1 class="title">Stats</h1><section class="stat-grid" style="margin-top:24px"><div class="small-card stat-card"><div class="stat-num gold">${state.streak} 🔥</div><div class="muted">Shared Streak</div></div><div class="small-card stat-card"><div class="stat-num" style="color:var(--green)">${ach}</div><div class="muted">Achievements</div><div class="tiny">of ${total} tasks</div></div><div class="small-card stat-card"><div class="stat-num" style="color:var(--blue)">${notes}</div><div class="muted">Notes Written</div></div><div class="small-card stat-card"><div class="stat-num gold">${checklist}%</div><div class="muted">Checklist Rate</div><div class="tiny">${p.checklist.filter(x=>x.done).length}/${p.checklist.length} today</div></div></section><section class="card"><div class="between"><h2>Daily Score — Last 7 Days</h2><span class="muted">Avg ${checklist}%</span></div><div class="bars">${['We','Th','Fr','Sa','Su','Mo','Tu'].map(d=>`<div><div class="bar" style="--h:${checklist||5}"></div><div class="tiny">${d}</div></div>`).join('')}</div></section><section class="card"><h2>Shared Streak</h2><div class="between"><div><div class="stat-num gold">${state.streak}</div><div class="muted">Current</div></div><div><div class="stat-num gold">—</div><div class="muted">Last Active</div></div><div><div class="stat-num gold">—</div><div class="muted">Both In</div></div></div></section>`}
-function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V1</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
+function mentor(){
+  const icons=['⌛','🗺️','🧭','🌊','🌧️','⚔️','🔭','🔄','🚧'];
+  return `<section class="header"><div><h1 class="title">Mentor</h1><div class="sub">What do you need right now?</div></div></section>
+  ${Object.keys(MENTOR).map((k,i)=>`<section class="mentor-card ${state.mentorOpen===k?'open':''}"><button class="mentor-item" data-mentor="${escapeHtml(k)}"><span>${icons[i]} &nbsp; ${escapeHtml(k)}</span><span class="muted">${state.mentorOpen===k?'⌃':'›'}</span></button>${state.mentorOpen===k?`<div class="mentor-drop">${escapeHtml(MENTOR[k])}</div>`:''}</section>`).join('')}
+  <div class="section-label">RECENT</div>${state.mentorRecent.slice(0,3).map(x=>`<div class="note-card"><span>${escapeHtml(x.text)}</span><span class="muted">${prettyDate(x.date)}</span></div>`).join('')}`
+}
+function stats(){
+  const p=profile(), total=countTasks(p.wins), ach=countAchievements(p.wins), notes=Object.keys(p.notes).length;
+  const checklist=p.checklist.length?Math.round(p.checklist.filter(x=>x.done).length/p.checklist.length*100):0;
+  const partner=state.profile==='Frankie'?'Jade':'Frankie';
+  const partnerActive=timeAgo(state.lastActive?.[partner]);
+  return `<h1 class="title">Stats</h1>
+  <section class="stat-grid" style="margin-top:24px">
+    <div class="small-card stat-card"><div class="stat-num gold">${state.streak} 🔥</div><div class="muted">Shared Streak</div></div>
+    <div class="small-card stat-card"><div class="stat-num partner-active">${partnerActive}</div><div class="muted">${partner} Last Active</div><div class="tiny">Local until sync is added</div></div>
+    <div class="small-card stat-card"><div class="stat-num" style="color:var(--green)">${ach}</div><div class="muted">Achievements</div><div class="tiny">of ${total} tasks</div></div>
+    <div class="small-card stat-card"><div class="stat-num" style="color:var(--blue)">${notes}</div><div class="muted">Notes Written</div></div>
+    <div class="small-card stat-card"><div class="stat-num gold">${checklist}%</div><div class="muted">Checklist Rate</div><div class="tiny">${p.checklist.filter(x=>x.done).length}/${p.checklist.length} today</div></div>
+  </section>
+  <section class="card stats-card"><div class="between"><h2>Daily Score — Last 7 Days</h2><span class="muted">Avg ${checklist}%</span></div><div class="bars">${['We','Th','Fr','Sa','Su','Mo','Tu'].map(d=>`<div><div class="bar" style="--h:${checklist||5}"></div><div class="tiny">${d}</div></div>`).join('')}</div></section>`
+}
+function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V1.5</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
+
+
+function maybeShowPhoenix(){
+  if(state.activeTab!=='home') return;
+  if(state.phoenixSeenDate===todayKey()) return;
+  showPhoenix();
+}
+function showPhoenix(){
+  if(document.querySelector('.phoenix-overlay')) return;
+  state.phoenixSeenDate=todayKey();
+  save();
+  const overlay=document.createElement('div');
+  overlay.className='phoenix-overlay';
+  overlay.innerHTML = `
+    <div class="phoenix-burst burst-1"></div>
+    <div class="phoenix-burst burst-2"></div>
+    <div class="phoenix">
+      <div class="phoenix-wing wing-left"></div>
+      <div class="phoenix-wing wing-right"></div>
+      <div class="phoenix-tail"></div>
+      <div class="phoenix-body"></div>
+      <div class="phoenix-head"></div>
+      <div class="phoenix-crown"></div>
+      <div class="phoenix-core"></div>
+      <div class="phoenix-streak">${state.streak}</div>
+    </div>
+    <div class="phoenix-text">${state.streak} day streak</div>
+  `;
+  document.body.appendChild(overlay);
+  const cleanup=()=>{overlay.classList.add('fade-out'); setTimeout(()=>overlay.remove(), 420);};
+  overlay.addEventListener('click', cleanup, {once:true});
+  setTimeout(cleanup, 2450);
+}
+
+
+let dragInfo = null;
+let longPressTimer = null;
+let dragPoint = null;
+
+function isInteractiveTarget(el){
+  return !!el.closest('button,input,textarea,.btn,.icon-btn,.tick');
+}
+function getDragElement(el){
+  const task = el.closest('.task-row[data-task]');
+  if(task) return task;
+  const sub = el.closest('.sub-block[data-sub]');
+  if(sub) return sub;
+  const win = el.closest('.win-card[data-win]');
+  if(win && el.closest('.win-drag-zone')) return win;
+  return null;
+}
+function startLongPressDrag(el, x, y){
+  const type = el.dataset.dragType;
+  dragInfo = {
+    type,
+    id: type==='task' ? el.dataset.task : type==='sub' ? el.dataset.sub : el.dataset.win,
+    fromWin: el.dataset.win || null,
+    fromSub: el.dataset.sub || null,
+    beforeX:x, beforeY:y
+  };
+  el.classList.add('dragging');
+  document.body.classList.add('drag-active');
+  navigator.vibrate?.(20);
+}
+function clearDragVisuals(){
+  $$('.drop-hover').forEach(x=>x.classList.remove('drop-hover'));
+  $$('.dragging').forEach(x=>x.classList.remove('dragging'));
+  document.body.classList.remove('drag-active');
+}
+function removeTaskById(taskId){
+  for(const w of profile().wins){
+    const i=w.tasks.findIndex(t=>t.id===taskId);
+    if(i>-1) return w.tasks.splice(i,1)[0];
+    for(const s of w.subs){
+      const j=s.tasks.findIndex(t=>t.id===taskId);
+      if(j>-1) return s.tasks.splice(j,1)[0];
+    }
+  }
+  return null;
+}
+function getTaskContainer(winId, subId){
+  const w=profile().wins.find(x=>x.id===winId);
+  if(!w) return null;
+  if(!subId || subId==='main') return w.tasks;
+  const s=w.subs.find(x=>x.id===subId);
+  return s?.tasks || null;
+}
+function locateTask(taskId){
+  for(const w of profile().wins){
+    let i=w.tasks.findIndex(t=>t.id===taskId);
+    if(i>-1) return {win:w, sub:null, list:w.tasks, index:i};
+    for(const s of w.subs){
+      i=s.tasks.findIndex(t=>t.id===taskId);
+      if(i>-1) return {win:w, sub:s, list:s.tasks, index:i};
+    }
+  }
+  return null;
+}
+function removeSubById(subId){
+  for(const w of profile().wins){
+    const i=w.subs.findIndex(s=>s.id===subId);
+    if(i>-1) return w.subs.splice(i,1)[0];
+  }
+  return null;
+}
+function locateSub(subId){
+  for(const w of profile().wins){
+    const i=w.subs.findIndex(s=>s.id===subId);
+    if(i>-1) return {win:w, list:w.subs, index:i};
+  }
+  return null;
+}
+function moveDraggedItem(dropEl, clientY){
+  if(!dragInfo || !dropEl) return false;
+
+  if(dragInfo.type==='win'){
+    const targetWin = dropEl.closest('.win-card[data-win]');
+    if(!targetWin) return false;
+    const fromIndex=profile().wins.findIndex(w=>w.id===dragInfo.id);
+    const toIndex=profile().wins.findIndex(w=>w.id===targetWin.dataset.win);
+    if(fromIndex<0 || toIndex<0 || fromIndex===toIndex) return false;
+    const item=profile().wins.splice(fromIndex,1)[0];
+    const rect=targetWin.getBoundingClientRect();
+    let insertIndex=profile().wins.findIndex(w=>w.id===targetWin.dataset.win);
+    if(clientY > rect.top + rect.height/2) insertIndex++;
+    profile().wins.splice(Math.max(0,insertIndex),0,item);
+    return true;
+  }
+
+  if(dragInfo.type==='sub'){
+    const sub = removeSubById(dragInfo.id);
+    if(!sub) return false;
+    let targetWinId = dropEl.closest('.win-card[data-win]')?.dataset.win;
+    let targetSub = dropEl.closest('.sub-block[data-sub]');
+    const targetWin = profile().wins.find(w=>w.id===targetWinId);
+    if(!targetWin) return false;
+
+    if(targetSub && targetSub.dataset.sub !== dragInfo.id){
+      const loc=locateSub(targetSub.dataset.sub);
+      if(loc){
+        const rect=targetSub.getBoundingClientRect();
+        let idx=loc.index + (clientY > rect.top + rect.height/2 ? 1 : 0);
+        loc.list.splice(idx,0,sub);
+        return true;
+      }
+    }
+    targetWin.subs.push(sub);
+    return true;
+  }
+
+  if(dragInfo.type==='task'){
+    const task = removeTaskById(dragInfo.id);
+    if(!task) return false;
+
+    const targetTask = dropEl.closest('.task-row[data-task]');
+    if(targetTask && targetTask.dataset.task !== dragInfo.id){
+      const loc=locateTask(targetTask.dataset.task);
+      if(loc){
+        const rect=targetTask.getBoundingClientRect();
+        let idx=loc.index + (clientY > rect.top + rect.height/2 ? 1 : 0);
+        loc.list.splice(idx,0,task);
+        return true;
+      }
+    }
+
+    const subBlock = dropEl.closest('.sub-block[data-sub]');
+    if(subBlock){
+      const list=getTaskContainer(subBlock.dataset.win, subBlock.dataset.sub);
+      if(list){ list.push(task); return true; }
+    }
+
+    const winCard = dropEl.closest('.win-card[data-win]');
+    if(winCard){
+      const list=getTaskContainer(winCard.dataset.win,'main');
+      if(list){ list.push(task); return true; }
+    }
+  }
+  return false;
+}
+
+document.addEventListener('pointerdown', e=>{
+  if(isInteractiveTarget(e.target)) return;
+  const el=getDragElement(e.target);
+  if(!el || state.activeTab!=='wins') return;
+  dragPoint={x:e.clientX,y:e.clientY,el};
+  clearTimeout(longPressTimer);
+  longPressTimer=setTimeout(()=>startLongPressDrag(el,e.clientX,e.clientY),360);
+},{passive:true});
+
+document.addEventListener('pointermove', e=>{
+  if(!dragPoint) return;
+  if(!dragInfo && (Math.abs(e.clientX-dragPoint.x)>10 || Math.abs(e.clientY-dragPoint.y)>10)){
+    clearTimeout(longPressTimer);
+  }
+  if(dragInfo){
+    $$('.drop-hover').forEach(x=>x.classList.remove('drop-hover'));
+    const el=document.elementFromPoint(e.clientX,e.clientY);
+    const target=el?.closest('.task-row,.sub-block,.win-card');
+    target?.classList.add('drop-hover');
+  }
+},{passive:true});
+
+document.addEventListener('pointerup', e=>{
+  clearTimeout(longPressTimer);
+  if(dragInfo){
+    const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.task-row,.sub-block,.win-card');
+    const moved=moveDraggedItem(target,e.clientY);
+    clearDragVisuals();
+    dragInfo=null; dragPoint=null;
+    if(moved){ save(); render(); }
+    return;
+  }
+  dragPoint=null;
+},{passive:true});
+
+document.addEventListener('pointercancel', ()=>{
+  clearTimeout(longPressTimer);
+  dragInfo=null; dragPoint=null;
+  clearDragVisuals();
+},{passive:true});
 
 function countTasks(wins){return wins.reduce((a,w)=>a+w.tasks.length+w.subs.reduce((b,s)=>b+s.tasks.length,0),0)}
 function countAchievements(wins){return wins.reduce((a,w)=>a+w.tasks.filter(t=>t.done).length+w.subs.reduce((b,s)=>b+s.tasks.filter(t=>t.done).length,0),0)}
@@ -81,8 +348,7 @@ function findTask(wins,id){for(const w of wins){let t=w.tasks.find(t=>t.id===id)
 // delegated interactions
 document.addEventListener('click', e=>{
  const id=e.target.id, btn=e.target.closest('button'), row=e.target.closest('[data-id]'), winEl=e.target.closest('[data-win]'), subEl=e.target.closest('[data-sub]'), taskEl=e.target.closest('[data-task]');
- if(id==='newMotd')return setState(s=>s.motdIndex=(s.motdIndex+1)%MOTD.length);
- if(id==='switchProfile'||id==='switchProfile2')return setState(s=>{s.profile=s.profile==='Frankie'?'Jade':'Frankie'; seedNotesIfEmpty()});
+ if(id==='switchProfile'||id==='switchProfile2')return setState(s=>{s.profile=s.profile==='Frankie'?'Jade':'Frankie'; s.lastActive=s.lastActive||{}; s.lastActive[s.profile]=Date.now(); seedNotesIfEmpty()});
  if(id==='addCheck'){const text=prompt('New checklist item'); if(text)setState(s=>profile().checklist.push({id:uid(),text,done:false}))}
  if(btn?.classList.contains('checkTick'))setState(s=>{const it=profile().checklist.find(x=>x.id===row.dataset.id); it.done=!it.done});
  if(btn?.classList.contains('editCheck')){const it=profile().checklist.find(x=>x.id===row.dataset.id); const text=prompt('Edit item',it.text); if(text!==null)setState(s=>it.text=text)}
@@ -96,8 +362,8 @@ document.addEventListener('click', e=>{
  if(btn?.classList.contains('winTick'))setState(s=>{const t=findTask(profile().wins,taskEl.dataset.task); t.done=!t.done});
  if(btn?.classList.contains('editTask')){const t=findTask(profile().wins,taskEl.dataset.task); const text=prompt('Edit task',t.text); if(text!==null)setState(s=>t.text=text)}
  if(btn?.classList.contains('delTask'))setState(s=>{for(const w of profile().wins){w.tasks=w.tasks.filter(t=>t.id!==taskEl.dataset.task); for(const sub of w.subs)sub.tasks=sub.tasks.filter(t=>t.id!==taskEl.dataset.task)}});
- if(btn?.classList.contains('mentor-item')){const text=btn.dataset.mentor; alert(MENTOR[text]); setState(s=>{s.mentorRecent=[{text,date:todayKey()},...s.mentorRecent.filter(x=>x.text!==text)].slice(0,8)})}
- if(id==='incStreak')setState(s=>s.streak++);
+ if(btn?.classList.contains('mentor-item')){const text=btn.dataset.mentor; setState(s=>{s.mentorOpen=s.mentorOpen===text?null:text; s.mentorRecent=[{text,date:todayKey()},...s.mentorRecent.filter(x=>x.text!==text)].slice(0,8)})}
+ if(id==='incStreak')setState(s=>{s.streak++; s.activeTab='home'; s.phoenixSeenDate='';});
  if(id==='resetStreak'){const p=prompt('Enter reset passcode'); if(p===state.resetPasscode && confirm('Reset shared streak?'))setState(s=>s.streak=0)}
  if(id==='changePass'){const p=prompt('New passcode'); if(p)setState(s=>s.resetPasscode=p)}
  if(id==='backupData')download('frankie-2-backup.json',JSON.stringify(state,null,2),'application/json')
@@ -107,6 +373,7 @@ function bindNotes(){
  $$('.seg-btn').forEach(b=>b.onclick=()=>setState(s=>s.notesView=b.dataset.view));
  $('#saveNote')?.addEventListener('click',()=>{const v=$('#noteText').value; setState(s=>{profile().notes[state.selectedNoteDate]=v})});
  $('#copyNote')?.addEventListener('click',()=>navigator.clipboard?.writeText($('#noteText').value));
+ $('#todayNote')?.addEventListener('click',()=>setState(s=>{s.selectedNoteDate=todayKey(); s.notesView='today'; s.calendarYear=new Date().getFullYear()}));
  $('#goDate')?.addEventListener('click',()=>{const k=parseDateInput(prompt('Enter date, e.g. 26/05/2026')); if(k)setState(s=>{s.selectedNoteDate=k; s.notesView='today'; s.calendarYear=Number(k.slice(0,4))})});
  $('#exportNotes')?.addEventListener('click',()=>{const notes=profile().notes; const md=Object.entries(notes).sort().map(([k,v])=>`# ${prettyDate(k)}\n\n${v}`).join('\n\n---\n\n'); download(`${state.profile}-notes.md`,md,'text/markdown')});
  $('#prevYear')?.addEventListener('click',()=>setState(s=>s.calendarYear--)); $('#nextYear')?.addEventListener('click',()=>setState(s=>s.calendarYear++));
