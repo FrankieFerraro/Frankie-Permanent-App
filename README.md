@@ -1,21 +1,37 @@
-# Frankie 2.0 V7 Usability Polish
+# Frankie 2.0 GitHub PWA
 
-Upload these files to the GitHub Pages repo, replacing the existing files.
+A static, mobile-first app-style version of Frankie 2.0. It is designed to run on GitHub Pages or any static host.
 
-Includes:
-- Simple black F app icon
-- Inline Achievement List task creation
-- Subheading-level + task button
-- Reversible task completion
-- Achievement counters
-- Cleaner Daily Notes layout
-- Date format changed to day/month/year style
-- Go-to-date controls moved higher
-- Year calendar view
-- 25 seeded test notes for layout testing
-- Copy button per note
-- Export all notes as Markdown
-- Backup/export as JSON
-- Hidden passcode reset flow remains protected
+## What works
+- Home dashboard with Message of the Day
+- Daily Score linked to checklist completion
+- Slow premium flame/streak display
+- Working daily checklist with local saving
+- Working Notes tab with Today, All Notes and Calendar
+- 25 seeded test notes for usability testing
+- Working Wins/Achievement List with headings, subheadings and tasks
+- Mentor prompts
+- Stats
+- Settings, backup and restore
 
-Open your live app with ?v=7 after upload.
+## Data
+Data is stored locally in the browser using localStorage. Frankie and Jade will each have their own data on their own phone. This version does not yet sync between phones.
+
+## GitHub Pages steps
+1. Create a new GitHub repository.
+2. Upload all files in this folder to the root of the repository.
+3. Go to Settings > Pages.
+4. Set Source to Deploy from branch.
+5. Choose main branch and /root.
+6. Open the published Pages URL on iPhone Safari.
+7. Tap Share > Add to Home Screen.
+
+## Important
+This is a permanent app-style prototype, not an App Store native app. It is the best free/fast path for daily use while the full native app is developed later.
+
+
+V1.1 polish notes
+- Daily Checklist includes pencil and trash emoji buttons like the Manus design.
+- Wins tasks also include pencil and trash buttons.
+- Flame animation slowed down and streak number kept integrated inside the flame.
+- Extra emoji cues added across Wins and Notes for a smoother app-like feel.

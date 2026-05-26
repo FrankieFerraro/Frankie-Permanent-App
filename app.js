@@ -1,184 +1,119 @@
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+const todayKey = () => new Date().toISOString().slice(0,10);
+const prettyDate = (key=todayKey()) => new Date(key+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+const uid = () => Math.random().toString(36).slice(2,10);
 
-const $ = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const KEY = `lifeos_${CONFIG.slug}_v7`;
-const PASSCODE = "2413";
-const TODAY = () => new Date().toISOString().slice(0,10);
-const clone = x => JSON.parse(JSON.stringify(x));
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-function seedNotes(){
-  const notes = {};
-  const now = new Date();
-  for(let i=1;i<=25;i++){
-    const d = new Date(now); d.setDate(now.getDate()-i);
-    const key = d.toISOString().slice(0,10);
-    notes[key] = `Test note ${i} - quick sample entry so you can test scrolling, date jump, calendar view and copy/export.`;
-  }
-  notes[TODAY()] = '';
-  return notes;
-}
-
-const defaultState = {
-  streak: 4,
-  markedToday:false,
-  lastIntroDate:null,
-  habits: CONFIG.defaultHabits.map((name,i)=>({id:crypto.randomUUID(), name, done:i<2})),
-  waterMl: CONFIG.waterGoal ? 0 : null,
-  projects: clone(CONFIG.defaultProjects),
-  notes: seedNotes(),
-  notesLayout: 'cols1',
-  history: [],
-  messageOffset: 0,
-  mentorCustom: {},
-  calendarYear: new Date().getFullYear()
+const MOTD = [
+  {q:'The compound effect is invisible until it is undeniable.', c:'Small actions feel meaningless in the moment. They are not. They are building something you cannot yet see.', r:'What small action, done daily for the next year, would transform an area of my life?'},
+  {q:'Build the day so tomorrow can trust you.', c:'Confidence is not a feeling you wait for. It is evidence you create through repeated follow-through.', r:'What would make tomorrow easier if I handled it today?'},
+  {q:'Be patient with results and wildly impatient with action.', c:'Results lag. Action is immediate. Stop demanding instant proof and start demanding immediate movement.', r:'Where can I act before I feel ready?'},
+  {q:'The standard is built when no one is watching.', c:'The private choices are the ones that become your public life.', r:'What private standard do I need to raise today?'},
+  {q:'Simple done consistently beats perfect done randomly.', c:'A clean repeatable action is worth more than a complicated plan you avoid.', r:'What is the simplest useful move I can make today?'}
+];
+const MENTOR = {
+  "I'm procrastinating": "You are not stuck because the task is impossible. You are stuck because the start feels bigger than it is. Shrink the task. Set a 10-minute timer and do the first ugly version. Momentum comes after movement, not before it.",
+  "I don't know where to start": "Start with the part that creates clarity. Write the outcome, list the next three actions and do the smallest one first. You do not need the full map to take the next step.",
+  "I need guidance": "Come back to priorities. Health, relationship, income, home and purpose. Pick the area causing the most drag and choose one action that would reduce pressure today.",
+  "I feel overwhelmed": "Your brain is holding too many open loops. Empty them onto paper or this app. Then choose one thing, not five. Calm returns when the next action becomes clear.",
+  "I feel sad, angry or moody": "Do not make permanent decisions from a temporary state. Regulate first. Breathe, walk, drink water, eat properly, then speak or act. Your emotion is real, but it does not need to drive the car.",
+  "I need discipline": "Discipline is removing the negotiation. Decide the rule before the mood arrives. Make the action small enough that excuses look ridiculous.",
+  "I need perspective": "Most problems feel bigger when you are tired, isolated or rushing. Zoom out. What will matter in 12 months? What is the mature response right now?",
+  "I need to reset my day": "The day is not ruined. Reset the next hour. Clean your space, drink water, take a breath and complete one visible action. Win the next block.",
+  "I'm avoiding something important": "Avoidance is information. It usually means fear, confusion or discomfort. Name the reason, then take the smallest honest step toward it."
 };
+
+const defaultState = () => ({
+  activeTab:'home', profile:'Frankie', streak:0, motdIndex:0, motdDate:todayKey(), calendarYear:new Date().getFullYear(), notesView:'today', selectedNoteDate:todayKey(), mentorRecent:[], resetPasscode:'2222',
+  profiles:{
+    Frankie:{checklist:[{id:uid(),text:'Pizza',done:true}], notes:{}, wins:sampleWins()},
+    Jade:{checklist:[{id:uid(),text:'Drink water',done:false},{id:uid(),text:'Move body',done:false}], notes:{}, wins:sampleWins(true)}
+  }
+});
+function sampleWins(jade=false){return [
+  {id:uid(),title:jade?'Weekly Reset':'Pakenham House',subs:[{id:uid(),title:'Outside',tasks:[task('Fix light'),task('Check roof'),task('Clean deck')]},{id:uid(),title:'Inside',tasks:[task('Fix tap'),task('Organise garage')]}],tasks:[]},
+  {id:uid(),title:jade?'Health Admin':'Life Admin',subs:[],tasks:[task('Call agent'),task('Pay bill'),task('Book appointment')]}
+]}
+function task(text){return {id:uid(),text,done:false}}
 let state = load();
-
-function load(){
-  try { const saved = JSON.parse(localStorage.getItem(KEY)); return saved ? deepMerge(clone(defaultState), saved) : clone(defaultState); }
-  catch { return clone(defaultState); }
-}
-function deepMerge(a,b){ for(const k in b){ a[k]=b[k]; } return a; }
-function save(){ localStorage.setItem(KEY, JSON.stringify(state)); render(); }
-function show(tab){ $$('.screen').forEach(x=>x.classList.remove('active')); $$('.tab').forEach(x=>x.classList.remove('active')); $('#'+tab).classList.add('active'); $(`[data-tab="${tab}"]`)?.classList.add('active'); }
-
-function messageIndex(){ const start = new Date('2026-01-01'); const d = Math.floor((new Date() - start)/86400000); return (d + (state.messageOffset||0)) % CONFIG.messages.length; }
-function message(){ return CONFIG.messages[messageIndex()]; }
-function score(){
-  const habit = state.habits.length ? state.habits.filter(h=>h.done).length/state.habits.length : 0;
-  if(CONFIG.waterGoal){ return Math.round((habit*0.72 + Math.min(1,(state.waterMl||0)/CONFIG.waterGoal)*0.28)*100); }
-  return Math.round(habit*100);
-}
-function tier(){ const s=state.streak; if(s>=365) return 'tier-legend'; if(s>=181) return 'tier-gold'; if(s>=61) return 'tier-purple'; if(s>=31) return 'tier-blue'; return ''; }
-function tierName(){ const s=state.streak; if(s>=365) return 'Legendary phoenix'; if(s>=181) return 'White/gold elite flame'; if(s>=61) return 'Purple flame'; if(s>=31) return 'Blue ember flame'; return 'Orange flame'; }
+seedNotesIfEmpty();
+function load(){try{return JSON.parse(localStorage.getItem('frankie2_state'))||defaultState()}catch{return defaultState()}}
+function save(){localStorage.setItem('frankie2_state', JSON.stringify(state))}
+function profile(){return state.profiles[state.profile]}
+function setState(fn){fn(state); save(); render()}
+function seedNotesIfEmpty(){const n=profile().notes;if(Object.keys(n).length)return; const base=new Date(); for(let i=1;i<=25;i++){const d=new Date(base); d.setDate(base.getDate()-i); const k=d.toISOString().slice(0,10); n[k]=`Test note ${i}. This is a sample daily note so you can test the All Notes view, scrolling, calendar markers and opening older notes.`} save()}
+function parseDateInput(v){v=(v||'').trim(); if(!v)return null; let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; const d=new Date(v); if(!isNaN(d))return d.toISOString().slice(0,10); return null}
+function escapeHtml(s=''){return s.replace(/[&<>'"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]))}
 
 function render(){
-  document.body.className = CONFIG.bodyClass || '';
-  $('#title').textContent = CONFIG.title; $('#sub').textContent = CONFIG.subtitle;
-  document.body.classList.remove('tier-blue','tier-purple','tier-gold','tier-legend'); if(tier()) document.body.classList.add(tier());
-  const m=message(); $('#messageLine').textContent=m.line; $('#messageContext').textContent=m.context; $('#messageReflection').textContent=m.reflection;
-  $('#scoreNum').textContent = score()+'%'; document.documentElement.style.setProperty('--scoreDeg', `${score()*3.6}deg`);
-  $('#streakNum').textContent = state.streak; $('#streakName').textContent = tierName();
-  $('#notifPreview').textContent = `🔥Day ${state.streak} complete🔥\nStreak alive with Jade. Keep going!`;
-  renderHabits(); renderWater(); renderProjects(); renderNotes(); renderHistory(); renderProgress(); renderCalendarYear();
+  const app=$('#app');
+  app.innerHTML = `<main class="shell">${screen()}</main>${nav()}`;
+  bindCommon();
+  if(state.activeTab==='notes') bindNotes();
 }
-function init(){
-  $$('.tab').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
-  $('#newMessage').onclick=()=>{state.messageOffset=(state.messageOffset||0)+1;save()};
-  $('#markComplete').onclick=markComplete; $('#replayIntro').onclick=playIntro;
-  $('#addHabitBtn').onclick=addHabit; $('#resetToday').onclick=resetToday; $('#closeDay').onclick=closeDay;
-  $('#addProject').onclick=addProject; $('#saveTodayNote').onclick=()=>saveNote(TODAY(), $('#todayNote').value);
-  $('#copyTodayNote').onclick=()=>copyOneNote(TODAY(), $('#todayNote').value);
-  $('#noteDate').value = TODAY(); $('#goDate').onclick=goDate; $('#copyNotes').onclick=copyNotes; $('#exportNotes').onclick=exportNotes; $('#printNotes').onclick=()=>window.print();
-  $('#layout').onchange=e=>{state.notesLayout=e.target.value;save()};
-  $('#toggleCalendar').onclick=()=>$('#calendarPanel').classList.toggle('hidden');
-  $('#prevYear').onclick=()=>{state.calendarYear=(state.calendarYear||new Date().getFullYear())-1;save()};
-  $('#nextYear').onclick=()=>{state.calendarYear=(state.calendarYear||new Date().getFullYear())+1;save()};
-  $$('.mentorBtn').forEach(b=>b.onclick=()=>mentor(b.dataset.mentor)); $('#editMentor').onclick=editMentor;
-  $('#backup').onclick=backup; $('#restore').onclick=restore; $('#unlockReset').onclick=unlockReset; $('#finalReset').onclick=finalReset;
-  $('#askNotify').onclick=requestNotifications; $('#testNotify').onclick=testNotify;
-  render(); maybeIntro();
+function nav(){const tabs=[['home','⌂','Home'],['wins','🏆','Wins'],['notes','▤','Notes'],['mentor','🧠','Mentor'],['stats','▮','Stats'],['settings','⚙','Settings']];return `<nav class="nav"><div class="nav-inner">${tabs.map(t=>`<button class="nav-btn ${state.activeTab===t[0]?'active':''}" data-tab="${t[0]}"><span class="nav-ico">${t[1]}</span>${t[2]}</button>`).join('')}</div></nav>`}
+function bindCommon(){ $$('.nav-btn').forEach(b=>b.onclick=()=>setState(s=>s.activeTab=b.dataset.tab)); }
+function screen(){return ({home:home(),wins:wins(),notes:notes(),mentor:mentor(),stats:stats(),settings:settings()})[state.activeTab]}
+function home(){const p=profile(), total=p.checklist.length, done=p.checklist.filter(x=>x.done).length, score=total?Math.round(done/total*100):0, m=MOTD[state.motdIndex%MOTD.length];return `
+  <section class="header"><div><h1 class="title">Hey ${state.profile} 🔥</h1><div class="sub">${prettyDate()}</div></div><button class="avatar" id="switchProfile">${state.profile[0]}</button></section>
+  <section class="card motd"><div class="between"><div class="motd-label">MESSAGE OF THE DAY</div><button id="newMotd" class="btn">↻ New</button></div><p class="motd-quote">"${escapeHtml(m.q)}"</p><div class="motd-body">${escapeHtml(m.c)}</div><div class="reflect"><div class="reflect-title">REFLECT</div><div class="reflect-text">${escapeHtml(m.r)}</div></div></section>
+  <section class="card score-streak"><div><div class="progress-ring" style="--score:${score}"><strong>${score}%</strong><span>Today</span></div><div class="card-title">Daily Score</div></div><div class="divider"></div><div><div class="flame-wrap"><div class="flame"><span class="flame-number">${state.streak}</span></div></div><div class="card-title">Streak</div></div></section>
+  <div class="between"><div class="list-title">Daily Checklist</div><div class="gold"><strong>${done}/${total}</strong></div></div>
+  <section>${p.checklist.map(item=>`<div class="check-row ${item.done?'done':''}" data-id="${item.id}"><button class="tick checkTick">✓</button><div class="row-text">${escapeHtml(item.text)}</div><button class="icon-btn editCheck">✏️</button><button class="icon-btn delCheck">🗑️</button></div>`).join('')}</section>
+  <button class="btn full" id="addCheck">+ Add item</button>`}
+function wins(){const p=profile(); const achievements=countAchievements(p.wins); const tasks=countTasks(p.wins);return `<section class="header"><div><h1 class="title">Wins 🏆</h1><div class="sub">Achievement List</div></div><button class="avatar">🏆</button></section><div class="between win-head"><div><span class="gold"><strong>${achievements}</strong></span> <span class="muted">achievements of ${tasks} tasks</span></div><button class="btn" id="addMain">+ Main heading</button></div>${p.wins.map(w=>winCard(w)).join('')}`}
+function winCard(w){return `<section class="card win-card" data-win="${w.id}"><div class="between"><div class="win-title">🏆 ${escapeHtml(w.title)}</div><button class="btn danger delWin">🗑️ Delete</button></div><div class="win-actions"><button class="btn addSub">➕ subheading</button><button class="btn addMainTask">➕ task</button></div>${w.tasks.map(t=>taskRow(t)).join('')}${w.subs.map(sub=>`<div class="subhead" data-sub="${sub.id}"><span>📌 ${escapeHtml(sub.title)}</span><span><button class="btn addSubTask">➕</button> <button class="btn danger delSub">🗑️</button></span></div>${sub.tasks.map(t=>taskRow(t)).join('')}`).join('')}</section>`}
+function taskRow(t){return `<div class="task-row ${t.done?'done':''}" data-task="${t.id}"><button class="tick winTick">✓</button><div class="row-text">${escapeHtml(t.text)}</div><button class="icon-btn editTask">✏️</button><button class="icon-btn delTask">🗑️</button></div>`}
+function notes(){return `<section class="header"><h1 class="title">Notes 📝</h1><div class="row"><button class="btn" id="goDate">Go to date</button><button class="btn" id="exportNotes">Export</button></div></section><section class="segment"><button class="seg-btn ${state.notesView==='today'?'active':''}" data-view="today">Today</button><button class="seg-btn ${state.notesView==='all'?'active':''}" data-view="all">All Notes</button><button class="seg-btn ${state.notesView==='calendar'?'active':''}" data-view="calendar">Calendar</button></section>${notesBody()}`}
+function notesBody(){const p=profile(); if(state.notesView==='today'){const val=p.notes[state.selectedNoteDate]||'';return `<div class="sub">${prettyDate(state.selectedNoteDate)}</div><textarea class="textarea" id="noteText" placeholder="Write today's note...">${escapeHtml(val)}</textarea><div class="row" style="margin-top:12px"><button class="btn" id="saveNote">💾 Save today</button><button class="btn ghost" id="copyNote">📋 Copy today</button></div>`}
+ if(state.notesView==='all'){const entries=Object.entries(p.notes).sort((a,b)=>b[0].localeCompare(a[0])); if(!entries.length)return `<div class="empty"><div>📝<strong>No notes yet</strong><span>Switch to Today to write your first note</span></div></div>`; return `<section class="card" style="padding:0">${entries.map(([k,v])=>`<div class="note-card" data-date="${k}"><div><div class="note-date">${prettyDate(k)}</div><div class="note-preview">${escapeHtml(v.slice(0,85))}${v.length>85?'...':''}</div></div><button class="icon-btn copyOne">📋</button></div>`).join('')}</section>`}
+ return calendar();}
+function calendar(){const y=state.calendarYear; const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `<div class="calendar-head"><button class="btn" id="prevYear">‹</button><div class="year-title">${y}</div><button class="btn" id="nextYear">›</button></div><section class="months">${months.map((m,i)=>month(y,i,m)).join('')}</section>`}
+function month(y,mi,name){const first=new Date(y,mi,1).getDay(); const days=new Date(y,mi+1,0).getDate(); let cells=''; for(let i=0;i<first;i++)cells+=`<div></div>`; for(let d=1;d<=days;d++){const k=`${y}-${String(mi+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; cells+=`<button class="day ${k===todayKey()?'today':''} ${profile().notes[k]?'has-note':''}" data-date="${k}">${d}</button>`} return `<div class="month"><div class="month-title">${name}</div><div class="days">${cells}</div></div>`}
+function mentor(){return `<section class="header"><div><h1 class="title">Mentor</h1><div class="sub">What do you need right now?</div></div></section>${Object.keys(MENTOR).map((k,i)=>`<button class="mentor-item" data-mentor="${escapeHtml(k)}"><span>${['⌛','🗺️','🧭','🌊','🌧️','⚔️','🔭','🔄','🚧'][i]} &nbsp; ${escapeHtml(k)}</span><span class="muted">›</span></button>`).join('')}<div class="section-label">RECENT</div>${state.mentorRecent.slice(0,3).map(x=>`<div class="note-card"><span>${escapeHtml(x.text)}</span><span class="muted">${prettyDate(x.date)}</span></div>`).join('')}`}
+function stats(){const p=profile(), total=countTasks(p.wins), ach=countAchievements(p.wins), notes=Object.keys(p.notes).length, checklist=p.checklist.length?Math.round(p.checklist.filter(x=>x.done).length/p.checklist.length*100):0;return `<h1 class="title">Stats</h1><section class="stat-grid" style="margin-top:24px"><div class="small-card stat-card"><div class="stat-num gold">${state.streak} 🔥</div><div class="muted">Shared Streak</div></div><div class="small-card stat-card"><div class="stat-num" style="color:var(--green)">${ach}</div><div class="muted">Achievements</div><div class="tiny">of ${total} tasks</div></div><div class="small-card stat-card"><div class="stat-num" style="color:var(--blue)">${notes}</div><div class="muted">Notes Written</div></div><div class="small-card stat-card"><div class="stat-num gold">${checklist}%</div><div class="muted">Checklist Rate</div><div class="tiny">${p.checklist.filter(x=>x.done).length}/${p.checklist.length} today</div></div></section><section class="card"><div class="between"><h2>Daily Score — Last 7 Days</h2><span class="muted">Avg ${checklist}%</span></div><div class="bars">${['We','Th','Fr','Sa','Su','Mo','Tu'].map(d=>`<div><div class="bar" style="--h:${checklist||5}"></div><div class="tiny">${d}</div></div>`).join('')}</div></section><section class="card"><h2>Shared Streak</h2><div class="between"><div><div class="stat-num gold">${state.streak}</div><div class="muted">Current</div></div><div><div class="stat-num gold">—</div><div class="muted">Last Active</div></div><div><div class="stat-num gold">—</div><div class="muted">Both In</div></div></div></section>`}
+function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V1</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
+
+function countTasks(wins){return wins.reduce((a,w)=>a+w.tasks.length+w.subs.reduce((b,s)=>b+s.tasks.length,0),0)}
+function countAchievements(wins){return wins.reduce((a,w)=>a+w.tasks.filter(t=>t.done).length+w.subs.reduce((b,s)=>b+s.tasks.filter(t=>t.done).length,0),0)}
+function findTask(wins,id){for(const w of wins){let t=w.tasks.find(t=>t.id===id); if(t)return t; for(const s of w.subs){t=s.tasks.find(t=>t.id===id); if(t)return t}}}
+
+// delegated interactions
+document.addEventListener('click', e=>{
+ const id=e.target.id, btn=e.target.closest('button'), row=e.target.closest('[data-id]'), winEl=e.target.closest('[data-win]'), subEl=e.target.closest('[data-sub]'), taskEl=e.target.closest('[data-task]');
+ if(id==='newMotd')return setState(s=>s.motdIndex=(s.motdIndex+1)%MOTD.length);
+ if(id==='switchProfile'||id==='switchProfile2')return setState(s=>{s.profile=s.profile==='Frankie'?'Jade':'Frankie'; seedNotesIfEmpty()});
+ if(id==='addCheck'){const text=prompt('New checklist item'); if(text)setState(s=>profile().checklist.push({id:uid(),text,done:false}))}
+ if(btn?.classList.contains('checkTick'))setState(s=>{const it=profile().checklist.find(x=>x.id===row.dataset.id); it.done=!it.done});
+ if(btn?.classList.contains('editCheck')){const it=profile().checklist.find(x=>x.id===row.dataset.id); const text=prompt('Edit item',it.text); if(text!==null)setState(s=>it.text=text)}
+ if(btn?.classList.contains('delCheck'))setState(s=>profile().checklist=profile().checklist.filter(x=>x.id!==row.dataset.id));
+ if(id==='addMain'){const title=prompt('Main heading name'); if(title)setState(s=>profile().wins.push({id:uid(),title,subs:[],tasks:[]}))}
+ if(btn?.classList.contains('delWin'))setState(s=>profile().wins=profile().wins.filter(w=>w.id!==winEl.dataset.win));
+ if(btn?.classList.contains('addSub')){const title=prompt('Subheading name'); if(title)setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).subs.push({id:uid(),title,tasks:[]}))}
+ if(btn?.classList.contains('addMainTask')){const text=prompt('Task'); if(text)setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).tasks.push(task(text)))}
+ if(btn?.classList.contains('addSubTask')){const text=prompt('Task'); if(text)setState(s=>profile().wins.find(w=>w.id===winEl.dataset.win).subs.find(x=>x.id===subEl.dataset.sub).tasks.push(task(text)))}
+ if(btn?.classList.contains('delSub'))setState(s=>{const w=profile().wins.find(w=>w.id===winEl.dataset.win); w.subs=w.subs.filter(x=>x.id!==subEl.dataset.sub)});
+ if(btn?.classList.contains('winTick'))setState(s=>{const t=findTask(profile().wins,taskEl.dataset.task); t.done=!t.done});
+ if(btn?.classList.contains('editTask')){const t=findTask(profile().wins,taskEl.dataset.task); const text=prompt('Edit task',t.text); if(text!==null)setState(s=>t.text=text)}
+ if(btn?.classList.contains('delTask'))setState(s=>{for(const w of profile().wins){w.tasks=w.tasks.filter(t=>t.id!==taskEl.dataset.task); for(const sub of w.subs)sub.tasks=sub.tasks.filter(t=>t.id!==taskEl.dataset.task)}});
+ if(btn?.classList.contains('mentor-item')){const text=btn.dataset.mentor; alert(MENTOR[text]); setState(s=>{s.mentorRecent=[{text,date:todayKey()},...s.mentorRecent.filter(x=>x.text!==text)].slice(0,8)})}
+ if(id==='incStreak')setState(s=>s.streak++);
+ if(id==='resetStreak'){const p=prompt('Enter reset passcode'); if(p===state.resetPasscode && confirm('Reset shared streak?'))setState(s=>s.streak=0)}
+ if(id==='changePass'){const p=prompt('New passcode'); if(p)setState(s=>s.resetPasscode=p)}
+ if(id==='backupData')download('frankie-2-backup.json',JSON.stringify(state,null,2),'application/json')
+ if(id==='restoreData')$('#restoreFile')?.click();
+});
+function bindNotes(){
+ $$('.seg-btn').forEach(b=>b.onclick=()=>setState(s=>s.notesView=b.dataset.view));
+ $('#saveNote')?.addEventListener('click',()=>{const v=$('#noteText').value; setState(s=>{profile().notes[state.selectedNoteDate]=v})});
+ $('#copyNote')?.addEventListener('click',()=>navigator.clipboard?.writeText($('#noteText').value));
+ $('#goDate')?.addEventListener('click',()=>{const k=parseDateInput(prompt('Enter date, e.g. 26/05/2026')); if(k)setState(s=>{s.selectedNoteDate=k; s.notesView='today'; s.calendarYear=Number(k.slice(0,4))})});
+ $('#exportNotes')?.addEventListener('click',()=>{const notes=profile().notes; const md=Object.entries(notes).sort().map(([k,v])=>`# ${prettyDate(k)}\n\n${v}`).join('\n\n---\n\n'); download(`${state.profile}-notes.md`,md,'text/markdown')});
+ $('#prevYear')?.addEventListener('click',()=>setState(s=>s.calendarYear--)); $('#nextYear')?.addEventListener('click',()=>setState(s=>s.calendarYear++));
+ $$('.day').forEach(b=>b.onclick=()=>setState(s=>{s.selectedNoteDate=b.dataset.date; s.notesView='today'}));
+ $$('.note-card[data-date]').forEach(card=>card.onclick=e=>{if(e.target.closest('.copyOne')){navigator.clipboard?.writeText(profile().notes[card.dataset.date]); return;} setState(s=>{s.selectedNoteDate=card.dataset.date; s.notesView='today'})});
+ $('#restoreFile')?.addEventListener('change',async e=>{const f=e.target.files[0]; if(!f)return; const text=await f.text(); state=JSON.parse(text); save(); render()});
 }
-function maybeIntro(){ if(state.lastIntroDate !== TODAY()){ setTimeout(playIntro,300); state.lastIntroDate=TODAY(); localStorage.setItem(KEY, JSON.stringify(state)); } }
-function playIntro(){ const el=$('#intro'); $('#introStreak').textContent = `Day ${state.streak} alive`; const n=$('#introNum'); if(n) n.textContent = state.streak; el.classList.add('active'); setTimeout(()=>el.classList.remove('active'),4000); }
-
-function markComplete(){ state.markedToday=true; state.streak=Math.max(1,(state.streak||0)+1); closeDay(false); tryBadge(state.streak); testNotify(); save(); }
-function resetToday(){ if(!confirm('Reset today only?')) return; state.habits.forEach(h=>h.done=false); if(CONFIG.waterGoal) state.waterMl=0; state.markedToday=false; save(); }
-function closeDay(showAlert=true){ const d=TODAY(); const lacking=[]; if(CONFIG.waterGoal && (state.waterMl||0)<CONFIG.waterGoal) lacking.push('water'); state.habits.filter(h=>!h.done).slice(0,4).forEach(h=>lacking.push(h.name)); const item={date:d,score:score(),lacking}; const i=state.history.findIndex(x=>x.date===d); if(i>=0) state.history[i]=item; else state.history.unshift(item); state.history=state.history.slice(0,730); if(showAlert) alert(`Day saved - ${item.score}%`); save(); }
-
-function renderHabits(){ const w=$('#habits'); w.innerHTML=''; state.habits.forEach(h=>{ const div=document.createElement('div'); div.className='habit'; div.innerHTML=`<div class="circle ${h.done?'done':''}" data-id="${h.id}">${h.done?'✓':''}</div><div class="grow text ${h.done?'done':''}">${esc(h.name)}</div><button class="small secondary" data-edit="${h.id}">Edit</button><button class="small danger" data-del="${h.id}">×</button>`; w.appendChild(div); }); w.querySelectorAll('[data-id]').forEach(x=>x.onclick=()=>{const h=state.habits.find(h=>h.id===x.dataset.id); h.done=!h.done; save();}); w.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{state.habits=state.habits.filter(h=>h.id!==x.dataset.del);save();}); w.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>{const h=state.habits.find(h=>h.id===x.dataset.edit);const n=prompt('Habit name',h.name); if(n){h.name=n.trim();save();}}); }
-function addHabit(){ const n=$('#newHabit').value.trim(); if(!n) return; state.habits.push({id:crypto.randomUUID(),name:n,done:false}); $('#newHabit').value=''; save(); }
-function renderWater(){ const c=$('#waterCard'); if(!CONFIG.waterGoal){c.classList.add('hidden');return;} c.classList.remove('hidden'); $('#waterNow').textContent=`${state.waterMl||0}ml / ${CONFIG.waterGoal}ml`; $('#waterPct').textContent=Math.min(100,Math.round((state.waterMl||0)/CONFIG.waterGoal*100))+'%'; const d=$('#drops'); d.innerHTML=''; for(let i=1;i<=9;i++){const ml=i*250;const el=document.createElement('div'); el.className='drop'+((state.waterMl||0)>=ml?' on':''); el.innerHTML=`<span>${ml>=1000?(ml/1000).toFixed(ml%1000?2:0)+'L':ml}</span>`; el.onclick=()=>{state.waterMl=ml;save()}; d.appendChild(el);} }
-
-function allTasks(){ return state.projects.flatMap(p=>p.sections.flatMap(s=>s.tasks)); }
-function renderProjects(){
-  $('#winsToday').textContent = allTasks().filter(t=>t.done && t.completedDate===TODAY()).length;
-  $('#winsTotal').textContent = allTasks().filter(t=>t.done).length;
-  const w=$('#projects'); w.innerHTML='';
-  state.projects.forEach(p=>{
-    const el=document.createElement('div'); el.className='project'; el.dataset.project=p.id;
-    el.innerHTML=`<div class="row projectTop"><div class="projectTitle" contenteditable="true" data-project-title="${p.id}">${esc(p.title)}</div><div class="actions"><button class="small secondary" data-sec="${p.id}">+ subheading</button><button class="small secondary" data-task-main="${p.id}">+ task</button><button class="small danger" data-delproj="${p.id}">×</button></div></div><div class="sections"></div>`;
-    const sw=el.querySelector('.sections');
-    p.sections.forEach(s=>{
-      const sec=document.createElement('div'); sec.className='sectionBlock'; sec.dataset.section=s.id;
-      sec.innerHTML=`<div class="subheadRow" draggable="true" data-drag-section="${s.id}"><div class="dragHandle">☰</div><div class="subhead" contenteditable="true" data-section-title="${s.id}">${esc(s.title||'General')}</div><button class="tinyAdd" data-task-section="${p.id}|${s.id}">＋</button></div><div class="taskList"></div>`;
-      const tl=sec.querySelector('.taskList');
-      s.tasks.forEach(t=> tl.appendChild(taskRow(t, p.id, s.id)) );
-      sw.appendChild(sec);
-    });
-    w.appendChild(el);
-  });
-  wireProjectEvents();
-}
-function taskRow(t,pid,sid){
-  const ta=document.createElement('div'); ta.className='task'+(t.done?' doneTask':''); ta.dataset.task=t.id; ta.draggable=true;
-  ta.innerHTML=`<div class="circle ${t.done?'done':''}" data-complete="${t.id}">${t.done?'🔥':''}</div><input class="taskInput grow ${t.done?'done':''}" value="${attr(t.text)}" placeholder="New achievement..." data-task-text="${t.id}"><button class="small danger" data-deltask="${t.id}">×</button>`;
-  return ta;
-}
-function wireProjectEvents(){ const w=$('#projects');
-  w.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>addSection(b.dataset.sec));
-  w.querySelectorAll('[data-task-main]').forEach(b=>b.onclick=()=>addBlankTask(b.dataset.taskMain,null,true));
-  w.querySelectorAll('[data-task-section]').forEach(b=>b.onclick=()=>{const [pid,sid]=b.dataset.taskSection.split('|'); addBlankTask(pid,sid,true);});
-  w.querySelectorAll('[data-delproj]').forEach(b=>b.onclick=()=>{if(confirm('Delete this main heading?')){state.projects=state.projects.filter(p=>p.id!==b.dataset.delproj);save();}});
-  w.querySelectorAll('[data-deltask]').forEach(b=>b.onclick=()=>deleteTask(b.dataset.deltask));
-  w.querySelectorAll('[data-complete]').forEach(b=>b.onclick=()=>toggleTaskDone(b.dataset.complete,b));
-  w.querySelectorAll('[data-task-text]').forEach(inp=>{ inp.oninput=()=>updateTaskText(inp.dataset.taskText, inp.value); inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } }; });
-  w.querySelectorAll('[data-project-title]').forEach(el=>el.onblur=()=>{const p=state.projects.find(p=>p.id===el.dataset.projectTitle); if(p){p.title=el.textContent.trim()||'Untitled'; persistOnly();}});
-  w.querySelectorAll('[data-section-title]').forEach(el=>el.onblur=()=>{const s=findSection(el.dataset.sectionTitle); if(s){s.title=el.textContent.trim()||'General'; persistOnly();}});
-  setupDragging(w);
-}
-function persistOnly(){ localStorage.setItem(KEY, JSON.stringify(state)); }
-function addProject(){ state.projects.unshift({id:crypto.randomUUID(),title:'New heading',sections:[{id:crypto.randomUUID(),title:'General',tasks:[]}]}); save(); setTimeout(()=>$('#projects [data-project-title]')?.focus(),100); }
-function addSection(pid){ const p=state.projects.find(x=>x.id===pid); if(!p)return; const s={id:crypto.randomUUID(),title:'New subheading',tasks:[]}; p.sections.push(s); save(); setTimeout(()=>document.querySelector(`[data-section-title="${s.id}"]`)?.focus(),100); }
-function addBlankTask(pid,sid=null,focus=false){ const p=state.projects.find(x=>x.id===pid); if(!p)return; let s=sid ? p.sections.find(x=>x.id===sid) : (p.sections.find(x=>(x.title||'').toLowerCase()==='general') || p.sections[0]); if(!s){ s={id:crypto.randomUUID(),title:'General',tasks:[]}; p.sections.push(s); } const t={id:crypto.randomUUID(),text:'',done:false,completedDate:null}; s.tasks.push(t); save(); if(focus) setTimeout(()=>document.querySelector(`[data-task-text="${t.id}"]`)?.focus(),100); }
-function updateTaskText(id,text){ const t=findTask(id); if(t){t.text=text; persistOnly();} }
-function findSection(id){ for(const p of state.projects){const s=p.sections.find(s=>s.id===id); if(s)return s;} }
-function findTask(id){ for(const p of state.projects){for(const s of p.sections){const t=s.tasks.find(x=>x.id===id); if(t)return t;}} }
-function toggleTaskDone(id,btn){ const t=findTask(id); if(!t)return; t.done=!t.done; t.completedDate=t.done?TODAY():null; const row=btn.closest('.task'); if(t.done){ const burst=document.createElement('div'); burst.className='burst'; burst.textContent='🔥'; row.appendChild(burst); } save(); }
-function deleteTask(id){ state.projects.forEach(p=>p.sections.forEach(s=>s.tasks=s.tasks.filter(t=>t.id!==id))); save(); }
-function setupDragging(w){
-  let dragged=null;
-  w.querySelectorAll('.task,.sectionBlock').forEach(el=>{
-    el.addEventListener('dragstart',e=>{ dragged=el; el.classList.add('dragging'); e.dataTransfer.setData('text/plain', el.dataset.task ? 'task:'+el.dataset.task : 'section:'+el.dataset.section); });
-    el.addEventListener('dragend',()=>{ if(dragged)dragged.classList.remove('dragging'); dragged=null; });
-  });
-  w.querySelectorAll('.taskList').forEach(list=>{
-    list.addEventListener('dragover',e=>e.preventDefault());
-    list.addEventListener('drop',e=>{ e.preventDefault(); const data=e.dataTransfer.getData('text/plain'); if(!data.startsWith('task:'))return; moveTaskToList(data.slice(5), list.closest('.project').dataset.project, list.closest('.sectionBlock').dataset.section); });
-  });
-}
-function moveTaskToList(taskId,pid,sid){ let task=null; state.projects.forEach(p=>p.sections.forEach(s=>{const i=s.tasks.findIndex(t=>t.id===taskId); if(i>=0){task=s.tasks.splice(i,1)[0];}})); const p=state.projects.find(p=>p.id===pid); const s=p?.sections.find(s=>s.id===sid); if(task&&s){s.tasks.push(task);save();} }
-
-function ensureTodayNote(){ if(!(TODAY() in state.notes)) state.notes[TODAY()]=''; }
-function saveNote(date,text){ state.notes[date]=text; save(); }
-function dateLabel(d){ const x=new Date(d+'T00:00:00'); return `${x.getDate()} ${MONTHS_LONG[x.getMonth()]} ${x.getFullYear()}`; }
-function renderNotes(){ ensureTodayNote(); $('#todayDate').textContent = dateLabel(TODAY()); $('#todayNote').value = state.notes[TODAY()]||''; $('#layout').value=state.notesLayout||'cols1'; const grid=$('#notesGrid'); grid.className='notesGrid '+(state.notesLayout||'cols1'); grid.innerHTML=''; const dates=Object.keys(state.notes).sort().reverse().filter(d=>d!==TODAY()); const view=dates.slice(0,160); view.forEach(d=>grid.appendChild(noteCard(d,state.notes[d]))); if(!view.length) grid.innerHTML='<p class="note">Previous notes will appear here after you start writing.</p>'; }
-function noteCard(date,text){ const el=document.createElement('div'); el.className='noteCard'; el.innerHTML=`<div class="row"><div class="dateTitle">${dateLabel(date)}</div><button class="small secondary copyIcon" data-copy-one="${date}" title="Copy note">⧉</button></div><textarea data-note="${date}">${esc(text||'')}</textarea><div class="actions" style="margin-top:10px"><button class="small secondary" data-save="${date}">Save</button><button class="small danger" data-delnote="${date}">Delete</button></div>`; el.querySelector('[data-save]').onclick=()=>saveNote(date,el.querySelector('textarea').value); el.querySelector('[data-copy-one]').onclick=()=>copyOneNote(date,el.querySelector('textarea').value); el.querySelector('[data-delnote]').onclick=()=>{if(confirm('Delete this note?')){delete state.notes[date];save();}}; return el; }
-function goDate(){ const d=$('#noteDate').value; if(!d)return; openNoteDate(d); }
-function openNoteDate(d){ if(!(d in state.notes)) state.notes[d]=''; save(); setTimeout(()=>{show('notes'); if(d===TODAY()){ $('#todayNote').focus(); $('#todayNote').scrollIntoView({behavior:'smooth',block:'center'}); } else { const card=[...document.querySelectorAll('[data-note]')].find(x=>x.dataset.note===d); if(card){card.focus(); card.scrollIntoView({behavior:'smooth',block:'center'});} }},100); }
-function renderCalendarYear(){ const y=state.calendarYear || new Date().getFullYear(); const title=$('#calendarYearTitle'); const grid=$('#yearGrid'); if(!title||!grid)return; title.textContent=y; grid.innerHTML=''; for(let m=0;m<12;m++){ const box=document.createElement('div'); box.className='monthBox'; let html=`<h4>${MONTHS[m]}</h4><div class="monthDays">`; const days=new Date(y,m+1,0).getDate(); const start=new Date(y,m,1).getDay(); for(let i=0;i<start;i++) html+=`<span></span>`; for(let d=1;d<=days;d++){ const key=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const has=(state.notes[key]||'').trim().length>0; const isToday=key===TODAY(); html+=`<button class="calDay ${has?'hasNote':''} ${isToday?'isToday':''}" data-date="${key}">${d}</button>`; } html+='</div>'; box.innerHTML=html; grid.appendChild(box); } grid.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>openNoteDate(b.dataset.date)); }
-function copyOneNote(date,text){ navigator.clipboard.writeText(`## ${dateLabel(date)}\n${text||''}`); alert('Note copied.'); }
-function copyNotes(){ const txt=notesMarkdown(); navigator.clipboard.writeText(txt); alert('All notes copied.'); }
-function notesMarkdown(){ return Object.keys(state.notes).sort().reverse().map(d=>`# ${dateLabel(d)}\n\n${state.notes[d]||''}`).join('\n\n---\n\n'); }
-function exportNotes(){ downloadText(`${CONFIG.slug}-daily-notes.md`, notesMarkdown(), 'text/markdown'); }
-
-function renderHistory(){ const w=$('#history'); w.innerHTML=''; const h=state.history.slice(0,28); if(!h.length){w.innerHTML='<p class="note">Close your first day to start history.</p>'; return;} h.forEach(d=>{const el=document.createElement('div'); el.className='day'; el.innerHTML=`<b>${d.score}%</b>${d.date.slice(5)}<br><small>${d.lacking?.length?'Low: '+d.lacking.join(', '):'Clean'}</small>`;w.appendChild(el);}); }
-function renderProgress(){ const h=state.history; const avg=arr=>arr.length?Math.round(arr.reduce((a,b)=>a+b.score,0)/arr.length):0; $('#weekAvg').textContent=avg(h.slice(0,7))+'%'; $('#monthAvg').textContent=avg(h.slice(0,31))+'%'; $('#yearAvg').textContent=avg(h.slice(0,365))+'%'; $('#bar30').style.width=Math.min(100,state.streak/30*100)+'%'; $('#bar60').style.width=Math.min(100,state.streak/60*100)+'%'; $('#bar365').style.width=Math.min(100,state.streak/365*100)+'%'; }
-
-function mentor(type){ $('#mentorOut').textContent = state.mentorCustom[type] || CONFIG.mentor[type] || CONFIG.mentor.default; }
-function editMentor(){ const keys=Object.keys(CONFIG.mentor).filter(x=>x!=='default'); const k=prompt('Which response? '+keys.join(', ')); if(!k||!CONFIG.mentor[k])return; const next=prompt('New response', state.mentorCustom[k]||CONFIG.mentor[k]); if(next){state.mentorCustom[k]=next;save();mentor(k);} }
-function unlockReset(){ const first=confirm('Danger zone. Are you sure you want to begin reset flow?'); if(!first)return; const code=prompt('Enter reset passcode'); if(code===PASSCODE){$('#resetPanel').classList.remove('hidden');} else alert('Wrong passcode.'); }
-function finalReset(){ if(confirm('Final confirmation - reset streak to zero?')){state.streak=0;state.markedToday=false;tryBadge(0);save();alert('Streak reset.');$('#resetPanel').classList.add('hidden');} }
-async function requestNotifications(){ if(!('Notification' in window)){alert('Notifications are not supported here.');return;} const p=await Notification.requestPermission(); alert('Notification permission - '+p); }
-function testNotify(){ if('Notification' in window && Notification.permission==='granted') new Notification(`🔥Day ${state.streak} complete🔥`,{body:'Streak alive with Jade. Keep going!',icon:'icon-192.png'}); else alert('Allow notifications first. Scheduled push comes in the cloud stage.'); }
-async function tryBadge(n){ try{ if('setAppBadge' in navigator) await navigator.setAppBadge(n); }catch(e){} }
-function backup(){ downloadText(`${CONFIG.slug}-life-os-backup.json`, JSON.stringify(state,null,2), 'application/json'); }
-function restore(){ const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange=async()=>{const f=inp.files[0]; if(!f)return; state=deepMerge(clone(defaultState), JSON.parse(await f.text())); save();}; inp.click(); }
-function downloadText(name,content,type='text/plain'){ const blob=new Blob([content],{type}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); }
-function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
-function attr(s){ return esc(String(s||'')).replace(/`/g,'&#096;'); }
-
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
-document.addEventListener('DOMContentLoaded', init);
+function download(name,content,type){const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); URL.revokeObjectURL(a.href)}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+render();
