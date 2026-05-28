@@ -63,11 +63,19 @@ const defaultState = () => ({
   profiles:{
     Frankie:{checklist:[{id:uid(),text:'Pizza',done:true}], water:{}, notes:{}, wins:sampleWins()},
     Jade:{checklist:[{id:uid(),text:'Move body',done:false}], water:{}, notes:{}, wins:sampleWins(true)}
-  }
+  },
+  finance:{view:'payslips', person:'Frankie', editPayslipId:null, customWeeks:8, calcLines:[], rates:sampleFinanceRates(), payslips:[]}
 });
 function sampleWins(jade=false){return [
   {id:uid(),title:jade?'Weekly Reset':'Pakenham House',subs:[{id:uid(),title:'Outside',tasks:[task('Fix light'),task('Check roof'),task('Clean deck')]},{id:uid(),title:'Inside',tasks:[task('Fix tap'),task('Organise garage')]}],tasks:[]},
   {id:uid(),title:jade?'Health Admin':'Life Admin',subs:[],tasks:[task('Call agent'),task('Pay bill'),task('Book appointment')]}
+]}
+function sampleFinanceRates(){return [
+  {id:uid(),person:'Frankie',employer:'Paylos',label:'Weekday',rate:0},
+  {id:uid(),person:'Frankie',employer:'Paylos',label:'Weekend',rate:0},
+  {id:uid(),person:'Jade',employer:'Studio Pilates',label:'Weekday',rate:0},
+  {id:uid(),person:'Jade',employer:'Studio Pilates',label:'Saturday',rate:0},
+  {id:uid(),person:'Jade',employer:'Studio Pilates',label:'Sunday',rate:0}
 ]}
 function task(text){return {id:uid(),text,done:false}}
 let state = load();
@@ -87,6 +95,13 @@ function migrateState(){
   Object.keys(state.profiles).forEach(name => {
     state.profiles[name].water = state.profiles[name].water || {};
   });
+  state.finance = state.finance || {view:'payslips', person:'Frankie', editPayslipId:null, customWeeks:8, calcLines:[], rates:sampleFinanceRates(), payslips:[]};
+  state.finance.view = state.finance.view || 'payslips';
+  state.finance.person = state.finance.person || 'Frankie';
+  state.finance.customWeeks = state.finance.customWeeks || 8;
+  state.finance.calcLines = state.finance.calcLines || [];
+  state.finance.rates = state.finance.rates || sampleFinanceRates();
+  state.finance.payslips = state.finance.payslips || [];
 }
 function setDailyMOTD(){
   const t = todayKey();
@@ -132,12 +147,13 @@ function render(){
   app.innerHTML = `<main class="shell">${screen()}</main>${nav()}`;
   bindCommon();
   if(state.activeTab==='notes') bindNotes();
+  if(state.activeTab==='finance') bindFinance();
   focusPendingEditable();
   maybeShowPhoenix();
 }
-function nav(){const tabs=[['home','⌂','Home'],['wins','🏆','Wins'],['notes','▤','Notes'],['mentor','🧠','Mentor'],['stats','▮','Stats'],['settings','⚙','Settings']];return `<nav class="nav"><div class="nav-inner">${tabs.map(t=>`<button class="nav-btn ${state.activeTab===t[0]?'active':''}" data-tab="${t[0]}"><span class="nav-ico">${t[1]}</span>${t[2]}</button>`).join('')}</div></nav>`}
+function nav(){const tabs=[['home','⌂','Home'],['wins','🏆','Wins'],['notes','▤','Notes'],['finance','💰','Finance'],['mentor','🧠','Mentor'],['stats','▮','Stats'],['settings','⚙','Settings']];return `<nav class="nav"><div class="nav-inner">${tabs.map(t=>`<button class="nav-btn ${state.activeTab===t[0]?'active':''}" data-tab="${t[0]}"><span class="nav-ico">${t[1]}</span>${t[2]}</button>`).join('')}</div></nav>`}
 function bindCommon(){ $$('.nav-btn').forEach(b=>b.onclick=()=>setState(s=>s.activeTab=b.dataset.tab)); }
-function screen(){return ({home:home(),wins:wins(),notes:notes(),mentor:mentor(),stats:stats(),settings:settings()})[state.activeTab]}
+function screen(){return ({home:home(),wins:wins(),notes:notes(),finance:finance(),mentor:mentor(),stats:stats(),settings:settings()})[state.activeTab]}
 function home(){const p=profile(), waterDone=waterComplete()?1:0, total=p.checklist.length+1, done=p.checklist.filter(x=>x.done).length+waterDone, score=total?Math.round(done/total*100):0, m=MOTD[state.motdIndex%MOTD.length];return `
   <section class="header"><div><h1 class="title">Frankie 2.0</h1><div class="sub">${prettyDate()}</div></div><button class="avatar" id="switchProfile">${state.profile[0]}</button></section>
   <section class="card motd"><div class="motd-label">MESSAGE OF THE DAY</div><p class="motd-quote">"${escapeHtml(m.q)}"</p><div class="motd-body">${escapeHtml(m.c)}</div><div class="reflect"><div class="reflect-title">REFLECT</div><div class="reflect-text">${escapeHtml(m.r)}</div></div></section>
@@ -151,9 +167,9 @@ function waterTracker(){
   const ml = waterMl();
   const label = ml>=1000 ? (ml/1000).toFixed(ml%1000===0?0:2)+'L' : ml+'ml';
   return `<section class="water-card">
-    <div class="water-top"><div><strong>💧 Water Intake</strong><span>Permanent daily task</span></div><div class="water-amount">${label} / 2.5L</div></div>
-    <div class="droplets">${Array.from({length:10},(_,i)=>`<button class="drop ${i<count?'filled':''}" data-water="${i+1}" aria-label="${(i+1)*250}ml">💧</button>`).join('')}</div>
-    <div class="water-note">Tap a droplet to fill up to that amount. Each droplet = 250ml.</div>
+    <div class="water-top"><div><strong>💧 Water Intake</strong><span>Permanent daily task</span></div><div class="water-amount" id="waterAmount">${label} / 2.5L</div></div>
+    <div class="droplets" id="waterDroplets" data-count="${count}">${Array.from({length:10},(_,i)=>`<button class="drop ${i<count?'filled':''}" data-water="${i+1}" aria-label="${(i+1)*250}ml">💧</button>`).join('')}</div>
+    <div class="water-note">Tap a droplet or slide your finger across to fill more or less. Each droplet = 250ml.</div>
   </section>`
 }
 
@@ -166,6 +182,90 @@ function notesBody(){const p=profile(); if(state.notesView==='today'){const val=
  return calendar();}
 function calendar(){const y=state.calendarYear; const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `<div class="calendar-head"><button class="btn" id="prevYear">‹</button><div class="year-title">${y}</div><button class="btn" id="nextYear">›</button></div><section class="months">${months.map((m,i)=>month(y,i,m)).join('')}</section>`}
 function month(y,mi,name){const first=new Date(y,mi,1).getDay(); const days=new Date(y,mi+1,0).getDate(); let cells=''; for(let i=0;i<first;i++)cells+=`<div></div>`; for(let d=1;d<=days;d++){const k=`${y}-${String(mi+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; cells+=`<button class="day ${k===todayKey()?'today':''} ${profile().notes[k]?'has-note':''}" data-date="${k}">${d}</button>`} return `<div class="month"><div class="month-title">${name}</div><div class="days">${cells}</div></div>`}
+
+function money(n){n=Number(n)||0; return '$'+n.toLocaleString('en-AU',{maximumFractionDigits:2,minimumFractionDigits:n%1?2:0})}
+function financePeople(){return ['Frankie','Jade']}
+function finance(){const f=state.finance; const s=financeStats(f.person), combined=financeStats('Combined'); return `<section class="header"><div><h1 class="title">Finance 💰</h1><div class="sub">Payslips, rates and income averages</div></div><button class="avatar">💰</button></section>
+  <section class="stat-grid finance-top">
+    <div class="small-card stat-card"><div class="stat-num gold">${money(s.last4)}</div><div class="muted">${f.person} 4 week avg</div></div>
+    <div class="small-card stat-card"><div class="stat-num" style="color:var(--green)">${money(combined.last4)}</div><div class="muted">Combined 4 week avg</div></div>
+    <div class="small-card stat-card"><div class="stat-num" style="color:var(--blue)">${money(s.yearNet)}</div><div class="muted">${f.person} this year</div></div>
+    <div class="small-card stat-card"><div class="stat-num gold">${money(s.allTime)}</div><div class="muted">All-time weekly avg</div></div>
+  </section>
+  <section class="segment finance-seg"><button class="seg-btn ${f.view==='payslips'?'active':''}" data-finance-view="payslips">Payslips</button><button class="seg-btn ${f.view==='calculator'?'active':''}" data-finance-view="calculator">Calculator</button><button class="seg-btn ${f.view==='rates'?'active':''}" data-finance-view="rates">Rates</button><button class="seg-btn ${f.view==='insights'?'active':''}" data-finance-view="insights">Insights</button></section>
+  ${financeBody()}`
+}
+function financePersonToggle(){return `<div class="person-toggle">${financePeople().map(p=>`<button class="${state.finance.person===p?'active':''}" data-finance-person="${p}">${p}</button>`).join('')}</div>`}
+function financeBody(){const v=state.finance.view; if(v==='calculator')return financeCalculator(); if(v==='rates')return financeRates(); if(v==='insights')return financeInsights(); return financePayslips();}
+function financePayslips(){
+  const f=state.finance, p=f.person, editing=f.payslips.find(x=>x.id===f.editPayslipId);
+  const list=f.payslips.filter(x=>x.person===p).sort((a,b)=>(b.payDate||'').localeCompare(a.payDate||''));
+  return `${financePersonToggle()}
+  <section class="card finance-form">
+    <div class="between"><h2>${editing?'Edit':'Add'} payslip</h2><button class="btn ghost" id="clearPayslipForm">Clear</button></div>
+    <div class="finance-grid">
+      <label>Pay date<input class="input" id="fpDate" type="date" value="${editing?.payDate||todayKey()}"></label>
+      <label>Employer<input class="input" id="fpEmployer" placeholder="Paylos / Goodlife / Studio Pilates" value="${escapeHtml(editing?.employer||'')}"></label>
+      <label>Period from<input class="input" id="fpFrom" type="date" value="${editing?.periodFrom||''}"></label>
+      <label>Period to<input class="input" id="fpTo" type="date" value="${editing?.periodTo||''}"></label>
+      <label>Total hours<input class="input" id="fpHours" type="number" step="0.01" placeholder="0" value="${editing?.hours||''}"></label>
+      <label>Gross pay<input class="input" id="fpGross" type="number" step="0.01" placeholder="0" value="${editing?.gross||''}"></label>
+      <label>Net pay<input class="input" id="fpNet" type="number" step="0.01" placeholder="0" value="${editing?.net||''}"></label>
+      <label>Tax withheld<input class="input" id="fpTax" type="number" step="0.01" placeholder="Optional" value="${editing?.tax||''}"></label>
+      <label>Super<input class="input" id="fpSuper" type="number" step="0.01" placeholder="Optional" value="${editing?.superAmount||''}"></label>
+      <label>Payslip photo<input class="input" id="fpFile" type="file" accept="image/*,application/pdf"></label>
+    </div>
+    <label>Notes<textarea class="textarea finance-note" id="fpNotes" placeholder="Optional notes">${escapeHtml(editing?.notes||'')}</textarea></label>
+    <div class="row" style="margin-top:12px"><button class="btn" id="savePayslip">💾 Save payslip</button>${editing?.attachment?`<a class="btn ghost" href="${editing.attachment}" target="_blank">📎 View current</a>`:''}</div>
+    <div class="tiny finance-warning">Payslip attachments are stored locally on this phone in this test version. Use small images where possible.</div>
+  </section>
+  <div class="section-label">SAVED PAYSLIPS</div>
+  ${list.length?`<section>${list.map(payslipCard).join('')}</section>`:`<div class="empty"><div>💰<strong>No payslips yet</strong><span>Add the first one above.</span></div></div>`}`
+}
+function payslipCard(x){return `<section class="card payslip-card" data-payslip="${x.id}">
+  <div class="between"><div><div class="note-date">${prettyDate(x.payDate||todayKey())}</div><div class="muted">${escapeHtml(x.employer||'No employer')}</div></div><div class="pay-net">${money(x.net)}</div></div>
+  <div class="pay-meta"><span>Gross ${money(x.gross)}</span><span>${Number(x.hours||0)} hrs</span><span>${x.periodFrom&&x.periodTo?prettyDate(x.periodFrom)+' - '+prettyDate(x.periodTo):'No period'}</span></div>
+  <div class="row pay-actions"><button class="btn editPayslip">✏️ Edit</button><button class="btn danger delPayslip">🗑️ Delete</button>${x.attachment?`<a class="btn ghost" href="${x.attachment}" target="_blank">📎 View payslip</a>`:''}</div>
+</section>`}
+function financeCalculator(){
+  const f=state.finance, rates=f.rates.filter(r=>r.person===f.person), total=f.calcLines.reduce((a,l)=>a+(Number(l.hours)||0)*(Number(l.rate)||0),0);
+  return `${financePersonToggle()}<section class="card finance-form"><h2>Quick pay calculator</h2>
+    <div class="finance-grid">
+      <label>Saved rate<select class="input" id="calcRateSelect"><option value="">Manual / choose rate</option>${rates.map(r=>`<option value="${r.id}">${escapeHtml(r.employer)} - ${escapeHtml(r.label)} - ${money(r.rate)}/hr</option>`).join('')}</select></label>
+      <label>Line label<input class="input" id="calcLabel" placeholder="Weekday / Saturday / overtime"></label>
+      <label>Hours<input class="input" id="calcHours" type="number" step="0.01" placeholder="0"></label>
+      <label>Hourly rate<input class="input" id="calcRate" type="number" step="0.01" placeholder="0"></label>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="addCalcLine">➕ Add line</button><button class="btn ghost" id="clearCalc">Clear</button></div>
+  </section>
+  <section class="card"><div class="between"><h2>Expected gross</h2><div class="pay-net">${money(total)}</div></div>${f.calcLines.length?f.calcLines.map(l=>`<div class="calc-line" data-calc="${l.id}"><span>${escapeHtml(l.label)}</span><span>${Number(l.hours)} hrs × ${money(l.rate)}</span><strong>${money(Number(l.hours)*Number(l.rate))}</strong><button class="icon-btn delCalc">🗑️</button></div>`).join(''):`<div class="muted">Add weekday, Saturday, Sunday or overtime lines above.</div>`}<button class="btn full" id="saveCalcAsPayslip">Save estimate as payslip</button></section>`
+}
+function financeRates(){
+  const f=state.finance, rates=f.rates.filter(r=>r.person===f.person);
+  return `${financePersonToggle()}<section class="card finance-form"><h2>Saved rates</h2><div class="finance-grid">
+    <label>Employer<input class="input" id="rateEmployer" placeholder="Studio Pilates / Goodlife"></label>
+    <label>Rate type<input class="input" id="rateLabel" placeholder="Weekday / Saturday / overtime"></label>
+    <label>Hourly rate<input class="input" id="rateAmount" type="number" step="0.01" placeholder="0"></label>
+  </div><button class="btn full" id="addRate">➕ Add saved rate</button></section>
+  <section>${rates.map(r=>`<div class="rate-row" data-rate="${r.id}"><div><strong>${escapeHtml(r.employer)}</strong><div class="muted">${escapeHtml(r.label)}</div></div><div class="pay-net">${money(r.rate)}/hr</div><button class="icon-btn delRate">🗑️</button></div>`).join('')||`<div class="empty"><div>💸<strong>No rates yet</strong><span>Add your first saved rate above.</span></div></div>`}</section>`
+}
+function financeInsights(){
+  const p=state.finance.person, s=financeStats(p), c=financeStats('Combined'), custom=financeAvg(p,state.finance.customWeeks);
+  return `${financePersonToggle()}<section class="stat-grid finance-top">
+    <div class="small-card stat-card"><div class="stat-num gold">${money(s.last4)}</div><div class="muted">Last 4 weeks</div></div>
+    <div class="small-card stat-card"><div class="stat-num gold">${money(s.last13)}</div><div class="muted">Last 13 weeks</div></div>
+    <div class="small-card stat-card"><div class="stat-num gold">${money(s.last26)}</div><div class="muted">Last 26 weeks</div></div>
+    <div class="small-card stat-card"><div class="stat-num gold">${money(s.allTime)}</div><div class="muted">All-time weekly avg</div></div>
+  </section>
+  <section class="card"><h2>Custom average</h2><label>Weeks<input class="input" id="customWeeks" type="number" min="1" max="520" value="${state.finance.customWeeks}"></label><div class="pay-net custom-result">${money(custom)} / week</div></section>
+  <section class="card"><h2>Year totals</h2><div class="about-row"><span class="muted">${p} net this year</span><span>${money(s.yearNet)}</span></div><div class="about-row"><span class="muted">${p} gross this year</span><span>${money(s.yearGross)}</span></div><div class="about-row"><span class="muted">Combined net this year</span><span>${money(c.yearNet)}</span></div><div class="about-row"><span class="muted">Combined 4 week avg</span><span>${money(c.last4)}</span></div></section>`
+}
+function financeStats(person){return {last4:financeAvg(person,4),last13:financeAvg(person,13),last26:financeAvg(person,26),allTime:financeAllTimeAvg(person),yearNet:financeYearTotal(person,'net'),yearGross:financeYearTotal(person,'gross')}}
+function financePayslipsFor(person){return state.finance.payslips.filter(x=>person==='Combined'||x.person===person)}
+function financeAvg(person,weeks){const cutoff=Date.now()-weeks*7*86400000; const items=financePayslipsFor(person).filter(x=>new Date((x.payDate||todayKey())+'T00:00:00').getTime()>=cutoff); return items.reduce((a,x)=>a+Number(x.net||0),0)/weeks}
+function financeAllTimeAvg(person){const items=financePayslipsFor(person).filter(x=>x.payDate); if(!items.length)return 0; const times=items.map(x=>new Date(x.payDate+'T00:00:00').getTime()); const weeks=Math.max(1,Math.ceil((Math.max(...times)-Math.min(...times)+86400000)/(7*86400000))); return items.reduce((a,x)=>a+Number(x.net||0),0)/weeks}
+function financeYearTotal(person,key){const y=new Date().getFullYear(); return financePayslipsFor(person).filter(x=>(x.payDate||'').slice(0,4)==String(y)).reduce((a,x)=>a+Number(x[key]||0),0)}
+
 function mentor(){
   const icons=['⌛','🗺️','🧭','🌊','🌧️','⚔️','🔭','🔄','🚧'];
   return `<section class="header"><div><h1 class="title">Mentor</h1><div class="sub">What do you need right now?</div></div></section>
@@ -187,7 +287,7 @@ function stats(){
   </section>
   <section class="card stats-card"><div class="between"><h2>Daily Score — Last 7 Days</h2><span class="muted">Avg ${checklist}%</span></div><div class="bars">${['We','Th','Fr','Sa','Su','Mo','Tu'].map(d=>`<div><div class="bar" style="--h:${checklist||5}"></div><div class="tiny">${d}</div></div>`).join('')}</div></section>`
 }
-function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V1.9</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
+function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V2.3</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
 
 
 function maybeShowPhoenix(){
@@ -503,6 +603,63 @@ function safeDeleteWin(winId){
   }
 }
 
+
+let waterDragActive = false;
+
+function waterLabelFor(count){
+  const ml = count * 250;
+  return (ml>=1000 ? (ml/1000).toFixed(ml%1000===0?0:2)+'L' : ml+'ml') + ' / 2.5L';
+}
+function updateWaterVisual(count){
+  count = Math.max(0, Math.min(10, Number(count)||0));
+  profile().water[todayKey()] = count;
+  save();
+  const wrap = $('#waterDroplets');
+  if(wrap){
+    wrap.dataset.count = count;
+    $$('.drop', wrap).forEach((d,i)=>d.classList.toggle('filled', i < count));
+  }
+  const amount = $('#waterAmount');
+  if(amount) amount.textContent = waterLabelFor(count);
+}
+function waterCountFromPoint(x, y){
+  const wrap = $('#waterDroplets');
+  if(!wrap) return null;
+  const rect = wrap.getBoundingClientRect();
+  const verticalBuffer = 26;
+  if(y < rect.top - verticalBuffer || y > rect.bottom + verticalBuffer) return null;
+  if(x <= rect.left) return 0;
+  if(x >= rect.right) return 10;
+  const ratio = (x - rect.left) / rect.width;
+  return Math.max(0, Math.min(10, Math.ceil(ratio * 10)));
+}
+function handleWaterPointer(e){
+  const count = waterCountFromPoint(e.clientX, e.clientY);
+  if(count === null) return;
+  updateWaterVisual(count);
+}
+document.addEventListener('pointerdown', e=>{
+  if(!e.target.closest?.('#waterDroplets,.drop')) return;
+  waterDragActive = true;
+  e.preventDefault();
+  handleWaterPointer(e);
+},{passive:false});
+document.addEventListener('pointermove', e=>{
+  if(!waterDragActive) return;
+  e.preventDefault();
+  handleWaterPointer(e);
+},{passive:false});
+document.addEventListener('pointerup', ()=>{
+  if(!waterDragActive) return;
+  waterDragActive = false;
+  render();
+},{passive:true});
+document.addEventListener('pointercancel', ()=>{
+  if(!waterDragActive) return;
+  waterDragActive = false;
+  render();
+},{passive:true});
+
 // delegated interactions
 document.addEventListener('click', e=>{
  const id=e.target.id, btn=e.target.closest('button'), row=e.target.closest('[data-id]'), winEl=e.target.closest('[data-win]'), subEl=e.target.closest('[data-sub]'), taskEl=e.target.closest('[data-task]');
@@ -540,6 +697,69 @@ function bindNotes(){
  $$('.note-card[data-date]').forEach(card=>card.onclick=e=>{if(e.target.closest('.copyOne')){navigator.clipboard?.writeText(profile().notes[card.dataset.date]); return;} setState(s=>{s.selectedNoteDate=card.dataset.date; s.notesView='today'})});
  $('#restoreFile')?.addEventListener('change',async e=>{const f=e.target.files[0]; if(!f)return; const text=await f.text(); state=JSON.parse(text); save(); render()});
 }
+
+function readAttachment(file){
+  return new Promise(resolve=>{
+    if(!file) return resolve(null);
+    if(file.type && file.type.startsWith('image/')){
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const img=new Image();
+        img.onload=()=>{
+          const max=1000, scale=Math.min(1,max/Math.max(img.width,img.height));
+          const c=document.createElement('canvas');
+          c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+          const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,c.width,c.height);
+          resolve(c.toDataURL('image/jpeg',.76));
+        };
+        img.onerror=()=>resolve(reader.result);
+        img.src=reader.result;
+      };
+      reader.readAsDataURL(file);
+    }else{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(reader.result);
+      reader.readAsDataURL(file);
+    }
+  });
+}
+async function savePayslipFromForm(){
+  const f=state.finance, file=$('#fpFile')?.files?.[0], existing=f.payslips.find(x=>x.id===f.editPayslipId);
+  const attachment=await readAttachment(file);
+  const entry={
+    id:existing?.id||uid(),
+    person:f.person,
+    payDate:$('#fpDate')?.value||todayKey(),
+    employer:$('#fpEmployer')?.value||'',
+    periodFrom:$('#fpFrom')?.value||'',
+    periodTo:$('#fpTo')?.value||'',
+    hours:Number($('#fpHours')?.value||0),
+    gross:Number($('#fpGross')?.value||0),
+    net:Number($('#fpNet')?.value||0),
+    tax:Number($('#fpTax')?.value||0),
+    superAmount:Number($('#fpSuper')?.value||0),
+    notes:$('#fpNotes')?.value||'',
+    attachment:attachment||existing?.attachment||null
+  };
+  setState(s=>{const i=s.finance.payslips.findIndex(x=>x.id===entry.id); if(i>-1)s.finance.payslips[i]=entry; else s.finance.payslips.push(entry); s.finance.editPayslipId=null;});
+}
+function bindFinance(){
+  $$('[data-finance-view]').forEach(b=>b.onclick=()=>setState(s=>s.finance.view=b.dataset.financeView));
+  $$('[data-finance-person]').forEach(b=>b.onclick=()=>setState(s=>{s.finance.person=b.dataset.financePerson; s.finance.editPayslipId=null;}));
+  $('#savePayslip')?.addEventListener('click',savePayslipFromForm);
+  $('#clearPayslipForm')?.addEventListener('click',()=>setState(s=>s.finance.editPayslipId=null));
+  $$('.editPayslip').forEach(b=>b.onclick=e=>{const id=e.target.closest('[data-payslip]').dataset.payslip; setState(s=>s.finance.editPayslipId=id)});
+  $$('.delPayslip').forEach(b=>b.onclick=e=>{const id=e.target.closest('[data-payslip]').dataset.payslip; setState(s=>s.finance.payslips=s.finance.payslips.filter(x=>x.id!==id))});
+  $('#calcRateSelect')?.addEventListener('change',e=>{const r=state.finance.rates.find(x=>x.id===e.target.value); if(r){$('#calcLabel').value=`${r.employer} - ${r.label}`; $('#calcRate').value=r.rate;}});
+  $('#addCalcLine')?.addEventListener('click',()=>{const label=$('#calcLabel').value||'Pay line', hours=Number($('#calcHours').value||0), rate=Number($('#calcRate').value||0); if(!hours&&!rate)return; setState(s=>s.finance.calcLines.push({id:uid(),label,hours,rate}))});
+  $('#clearCalc')?.addEventListener('click',()=>setState(s=>s.finance.calcLines=[]));
+  $$('.delCalc').forEach(b=>b.onclick=e=>{const id=e.target.closest('[data-calc]').dataset.calc; setState(s=>s.finance.calcLines=s.finance.calcLines.filter(x=>x.id!==id))});
+  $('#saveCalcAsPayslip')?.addEventListener('click',()=>{const total=state.finance.calcLines.reduce((a,l)=>a+(Number(l.hours)||0)*(Number(l.rate)||0),0), hours=state.finance.calcLines.reduce((a,l)=>a+Number(l.hours||0),0); if(!total)return; setState(s=>{s.finance.payslips.push({id:uid(),person:s.finance.person,payDate:todayKey(),employer:'Calculator estimate',periodFrom:'',periodTo:'',hours,gross:total,net:0,tax:0,superAmount:0,notes:'Saved from calculator. Enter actual net pay once payslip arrives.',attachment:null}); s.finance.view='payslips'; s.finance.calcLines=[];})});
+  $('#addRate')?.addEventListener('click',()=>{const employer=$('#rateEmployer').value||'Employer', label=$('#rateLabel').value||'Rate', rate=Number($('#rateAmount').value||0); setState(s=>s.finance.rates.push({id:uid(),person:s.finance.person,employer,label,rate}))});
+  $$('.delRate').forEach(b=>b.onclick=e=>{const id=e.target.closest('[data-rate]').dataset.rate; setState(s=>s.finance.rates=s.finance.rates.filter(x=>x.id!==id))});
+  $('#customWeeks')?.addEventListener('change',e=>setState(s=>s.finance.customWeeks=Math.max(1,Number(e.target.value||8))));
+}
+
 function download(name,content,type){const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); URL.revokeObjectURL(a.href)}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
 render();

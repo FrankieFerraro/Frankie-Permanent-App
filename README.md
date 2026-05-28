@@ -80,3 +80,26 @@ V1.9 updates
 - Water counts as one daily checklist task
 - 10 droplets represent 2.5L total, 250ml each
 - Tapping a droplet fills all previous droplets automatically
+
+
+V2.0 updates
+- Replaced CSS flame with extracted flame asset from the supplied screenshot
+- Streak number now overlays the exact flame style
+
+
+V2.1 updates
+- Re-captured the exact flame asset with the full bottom/base included
+- Removed leftover card/background edges from the flame PNG transparency
+
+
+V2.2 updates
+- Added Finance tab
+- Added payslip logging with pay date, period, employer, hours, gross, net, tax, super, notes and attachment
+- Added quick pay calculator with multiple lines
+- Added saved rates for Frankie/Jade
+- Added income insights for 4, 13, 26, all-time and custom weekly averages
+
+
+V2.3 updates
+- Water droplets can now be tapped or swiped left/right
+- Sliding across droplets fills or reduces water live as your finger moves
