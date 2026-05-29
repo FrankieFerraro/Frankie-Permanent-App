@@ -103,3 +103,16 @@ V2.2 updates
 V2.3 updates
 - Water droplets can now be tapped or swiped left/right
 - Sliding across droplets fills or reduces water live as your finger moves
+
+
+V2.4 updates
+- Daily Checklist now uses inline editing instead of prompt pop-ups
+- Plus button sits beside the Daily Checklist title and instantly adds a new task
+- New tasks focus automatically so you can type straight away
+- Pencil icon removed from checklist rows because tapping the text edits directly
+
+
+V2.5 updates
+- Settings redesigned into cleaner grouped sections inspired by Claude’s layout
+- Sections now grouped into Profile, App, Data and About
+- Reduced visual clutter and made rows feel more premium/app-like

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'frankie-2-v23';
+const CACHE_NAME = 'frankie-2-v25';
 const FILES = ['./','./index.html','./styles.css','./app.js','./manifest.json','./icon-192.png','./icon-512.png','./perfect-flame.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(FILES)));

@@ -124,7 +124,19 @@ function waterCount(){return profile().water?.[todayKey()] || 0}
 function waterMl(){return waterCount()*250}
 function waterComplete(){return waterCount()>=10}
 function setWater(count){setState(s=>{profile().water[todayKey()] = Math.max(0, Math.min(10, count));})}
-function setState(fn){fn(state); save(); render()}
+function focusChecklistItem(id){
+  setTimeout(()=>{
+    const el=document.querySelector(`[data-check-id="${id}"]`);
+    if(!el) return;
+    el.focus();
+    const range=document.createRange();
+    range.selectNodeContents(el);
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  },30);
+}
+function setState(fn){fn(state); save(); render(); if(focusCheckAfterRender){const id=focusCheckAfterRender; focusCheckAfterRender=null; focusChecklistItem(id);}}
 function seedNotesIfEmpty(){const n=profile().notes;if(Object.keys(n).length)return; const base=new Date(); for(let i=1;i<=25;i++){const d=new Date(base); d.setDate(base.getDate()-i); const k=d.toISOString().slice(0,10); n[k]=`Test note ${i}. This is a sample daily note so you can test the All Notes view, scrolling, calendar markers and opening older notes.`} save()}
 function parseDateInput(v){v=(v||'').trim(); if(!v)return null; let m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`; const d=new Date(v); if(!isNaN(d))return d.toISOString().slice(0,10); return null}
 function escapeHtml(s=''){return s.replace(/[&<>'"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]))}
@@ -158,10 +170,9 @@ function home(){const p=profile(), waterDone=waterComplete()?1:0, total=p.checkl
   <section class="header"><div><h1 class="title">Frankie 2.0</h1><div class="sub">${prettyDate()}</div></div><button class="avatar" id="switchProfile">${state.profile[0]}</button></section>
   <section class="card motd"><div class="motd-label">MESSAGE OF THE DAY</div><p class="motd-quote">"${escapeHtml(m.q)}"</p><div class="motd-body">${escapeHtml(m.c)}</div><div class="reflect"><div class="reflect-title">REFLECT</div><div class="reflect-text">${escapeHtml(m.r)}</div></div></section>
   <section class="card score-streak"><div><div class="progress-ring" style="--score:${score}"><strong>${score}%</strong><span>Today</span></div><div class="card-title">Daily Score</div></div><div class="divider"></div><div><div class="flame-wrap"><div class="flame"><span class="flame-number">${state.streak}</span></div></div><div class="card-title">Streak</div></div></section>
-  <div class="between"><div class="list-title">Daily Checklist</div><div class="gold"><strong>${done}/${total}</strong></div></div>
+  <div class="between checklist-head"><div><div class="list-title">Daily Checklist</div><div class="tiny">${done}/${total} done</div></div><button class="mini-add" id="addCheck" aria-label="Add checklist item">+</button></div>
   ${waterTracker()}
-  <section>${p.checklist.map(item=>`<div class="check-row ${item.done?'done':''}" data-id="${item.id}"><button class="tick checkTick">✓</button><div class="row-text">${escapeHtml(item.text)}</div><button class="icon-btn editCheck">✏️</button><button class="icon-btn delCheck">🗑️</button></div>`).join('')}</section>
-  <button class="btn full" id="addCheck">+ Add item</button>`}
+  <section class="checklist-section">${p.checklist.map(item=>`<div class="check-row inline-check ${item.done?'done':''}" data-id="${item.id}"><button class="tick checkTick">✓</button><div class="row-text check-editable" contenteditable="true" data-check-id="${item.id}" data-placeholder="New task">${escapeHtml(item.text)}</div><button class="icon-btn delCheck">×</button></div>`).join('')}</section>`}
 function waterTracker(){
   const count = waterCount();
   const ml = waterMl();
@@ -287,8 +298,98 @@ function stats(){
   </section>
   <section class="card stats-card"><div class="between"><h2>Daily Score — Last 7 Days</h2><span class="muted">Avg ${checklist}%</span></div><div class="bars">${['We','Th','Fr','Sa','Su','Mo','Tu'].map(d=>`<div><div class="bar" style="--h:${checklist||5}"></div><div class="tiny">${d}</div></div>`).join('')}</div></section>`
 }
-function settings(){return `<h1 class="title">Settings</h1><div class="section-label">PROFILE</div><section class="card between"><div class="row"><div class="avatar">${state.profile[0]}</div><div><h2>${state.profile}</h2><div class="muted">Active profile</div></div></div><button class="btn" id="switchProfile2">Switch</button></section><div class="section-label">PARTNER CONNECTION</div><section class="settings-list"><button>🔗 Generate Invite Code <span class="muted">L930K4</span></button><button>🔑 Enter Partner Code</button></section><div class="section-label">STREAK</div><section class="card" style="text-align:center"><div class="row" style="justify-content:center"><div class="flame" style="width:68px;height:88px"><span class="flame-number" style="font-size:24px;bottom:19px">${state.streak}</span></div></div><div class="muted">Current shared streak</div></section><section class="settings-list"><button id="incStreak">➕ Increment Streak (Manual)</button><button id="changePass">🔒 Change Reset Passcode</button><button class="danger-text" id="resetStreak">⚠️ Reset Streak</button></section><div class="section-label">DATA & BACKUP</div><section class="settings-list"><button id="backupData">📦 Backup Data</button><button id="restoreData">📥 Restore from Backup</button><input id="restoreFile" type="file" accept="application/json" hidden></section><div class="section-label">ABOUT</div><section class="card"><div class="about-row"><span class="muted">Version</span><span>Frankie 2.0 V2.3</span></div><div class="about-row"><span class="muted">Profiles</span><span>Frankie · Jade</span></div><div class="about-row"><span class="muted">Data Privacy</span><span>Stored locally on device</span></div><div class="about-row"><span class="muted">Shared Data</span><span>Streak · MOTD · Check-in</span></div></section>`}
+function settings(){return `<h1 class="title settings-title">Settings</h1>
 
+  <div class="section-label">PROFILE</div>
+  <section class="settings-group">
+    <div class="settings-row">
+      <div>
+        <div class="settings-main">Active Profile</div>
+        <div class="settings-sub">Switch between Frankie and Jade</div>
+      </div>
+      <button class="settings-pill" id="switchProfile2">${state.profile}</button>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-main">Partner Sync</div>
+        <div class="settings-sub">Shared streak, message and check-ins later</div>
+      </div>
+      <span class="settings-value muted">Coming soon</span>
+    </div>
+  </section>
+
+  <div class="section-label">APP</div>
+  <section class="settings-group">
+    <button class="settings-row settings-action" id="replayAnim">
+      <div>
+        <div class="settings-main">Replay Daily Animation</div>
+        <div class="settings-sub">Preview the streak intro again</div>
+      </div>
+      <span class="settings-icon">▶</span>
+    </button>
+    <button class="settings-row settings-action" id="incStreak">
+      <div>
+        <div class="settings-main">Increment Streak</div>
+        <div class="settings-sub">Manual test control while building</div>
+      </div>
+      <span class="settings-icon">＋</span>
+    </button>
+    <button class="settings-row settings-action" id="changePass">
+      <div>
+        <div class="settings-main">Change Reset Passcode</div>
+        <div class="settings-sub">Controls streak reset protection</div>
+      </div>
+      <span class="settings-icon">🔒</span>
+    </button>
+    <button class="settings-row settings-action danger-row" id="resetStreak">
+      <div>
+        <div class="settings-main">Reset Streak</div>
+        <div class="settings-sub">Protected by reset passcode</div>
+      </div>
+      <span class="settings-icon">›</span>
+    </button>
+  </section>
+
+  <div class="section-label">DATA</div>
+  <section class="settings-group">
+    <button class="settings-row settings-action" id="backupData">
+      <div>
+        <div class="settings-main">Backup Data</div>
+        <div class="settings-sub">Export your current app data</div>
+      </div>
+      <span class="settings-icon">↓</span>
+    </button>
+    <button class="settings-row settings-action" id="restoreData">
+      <div>
+        <div class="settings-main">Restore Data</div>
+        <div class="settings-sub">Import a previous backup file</div>
+      </div>
+      <span class="settings-icon">↑</span>
+    </button>
+    <input id="restoreFile" type="file" accept="application/json" hidden>
+  </section>
+
+  <div class="section-label">ABOUT</div>
+  <section class="settings-group">
+    <div class="settings-row">
+      <div class="settings-main">Version</div>
+      <span class="settings-value">2.5</span>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-main">Privacy</div>
+        <div class="settings-sub">Data is stored locally on this device for now</div>
+      </div>
+      <span class="settings-value">Local</span>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-main">Shared Data</div>
+        <div class="settings-sub">Streak, Message of the Day and future check-ins</div>
+      </div>
+      <span class="settings-value">Limited</span>
+    </div>
+  </section>`}
 
 function maybeShowPhoenix(){
   if(state.activeTab!=='home') return;
@@ -381,6 +482,7 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+let focusCheckAfterRender = null;
 let focusAfterRender = null;
 let dragInfo = null;
 let longPressTimer = null;
@@ -660,14 +762,43 @@ document.addEventListener('pointercancel', ()=>{
   render();
 },{passive:true});
 
+
+document.addEventListener('input', e=>{
+  const el=e.target.closest?.('.check-editable[data-check-id]');
+  if(!el) return;
+  const item=profile().checklist.find(x=>x.id===el.dataset.checkId);
+  if(item){
+    item.text=(el.innerText||el.textContent||'').replace(/\n/g,' ').trim();
+    save();
+  }
+});
+document.addEventListener('keydown', e=>{
+  const el=e.target.closest?.('.check-editable[data-check-id]');
+  if(!el) return;
+  if(e.key==='Enter'){
+    e.preventDefault();
+    el.blur();
+  }
+});
+document.addEventListener('blur', e=>{
+  const el=e.target.closest?.('.check-editable[data-check-id]');
+  if(!el) return;
+  const item=profile().checklist.find(x=>x.id===el.dataset.checkId);
+  if(item){
+    const text=(el.innerText||el.textContent||'').replace(/\n/g,' ').trim();
+    item.text=text || 'New task';
+    save();
+  }
+}, true);
+
 // delegated interactions
 document.addEventListener('click', e=>{
  const id=e.target.id, btn=e.target.closest('button'), row=e.target.closest('[data-id]'), winEl=e.target.closest('[data-win]'), subEl=e.target.closest('[data-sub]'), taskEl=e.target.closest('[data-task]');
  if(id==='switchProfile'||id==='switchProfile2')return setState(s=>{s.profile=s.profile==='Frankie'?'Jade':'Frankie'; s.lastActive=s.lastActive||{}; s.lastActive[s.profile]=Date.now(); seedNotesIfEmpty()});
- if(id==='addCheck'){const text=prompt('New checklist item'); if(text)setState(s=>profile().checklist.push({id:uid(),text,done:false}))}
+ if(id==='addCheck'){const newId=uid(); focusCheckAfterRender=newId; setState(s=>profile().checklist.push({id:newId,text:'New task',done:false}))}
  if(btn?.classList.contains('drop')){setWater(Number(btn.dataset.water));}
  if(btn?.classList.contains('checkTick'))setState(s=>{const it=profile().checklist.find(x=>x.id===row.dataset.id); it.done=!it.done});
- if(btn?.classList.contains('editCheck')){const it=profile().checklist.find(x=>x.id===row.dataset.id); const text=prompt('Edit item',it.text); if(text!==null)setState(s=>it.text=text)}
+ 
  if(btn?.classList.contains('delCheck'))setState(s=>profile().checklist=profile().checklist.filter(x=>x.id!==row.dataset.id));
  if(id==='addMain'){const newId=uid(); focusAfterRender={type:'win',id:newId}; setState(s=>profile().wins.push({id:newId,title:'',subs:[],tasks:[]}))}
  if(btn?.classList.contains('delWin'))setState(s=>safeDeleteWin(winEl.dataset.win));
@@ -680,6 +811,7 @@ document.addEventListener('click', e=>{
  if(btn?.classList.contains('delTask'))setState(s=>{for(const w of profile().wins){w.tasks=w.tasks.filter(t=>t.id!==taskEl.dataset.task); for(const sub of w.subs)sub.tasks=sub.tasks.filter(t=>t.id!==taskEl.dataset.task)}});
  if(btn?.classList.contains('mentor-item')){const text=btn.dataset.mentor; setState(s=>{s.mentorOpen=s.mentorOpen===text?null:text; s.mentorRecent=[{text,date:todayKey()},...s.mentorRecent.filter(x=>x.text!==text)].slice(0,8)})}
  if(id==='incStreak')setState(s=>{s.streak++; s.activeTab='home'; s.phoenixSeenDate='';});
+ if(id==='replayAnim')setState(s=>{s.activeTab='home'; s.phoenixSeenDate='';});
  if(id==='resetStreak'){const p=prompt('Enter reset passcode'); if(p===state.resetPasscode && confirm('Reset shared streak?'))setState(s=>s.streak=0)}
  if(id==='changePass'){const p=prompt('New passcode'); if(p)setState(s=>s.resetPasscode=p)}
  if(id==='backupData')download('frankie-2-backup.json',JSON.stringify(state,null,2),'application/json')
